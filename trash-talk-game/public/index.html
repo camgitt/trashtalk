@@ -35,9 +35,14 @@
             background: linear-gradient(180deg, #ff6b6b 0%, #ee5a5a 50%, #ff4757 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 4px 4px 0px rgba(0,0,0,0.3);
             letter-spacing: 4px;
             margin-bottom: 10px;
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+        
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
         
         .tagline { color: #888; font-size: 14px; margin-bottom: 40px; }
@@ -56,11 +61,30 @@
             box-shadow: 0 4px 15px rgba(255,71,87,0.4);
         }
         
-        button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,71,87,0.5); }
-        button:active { transform: translateY(1px); }
+        button:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 6px 20px rgba(255,71,87,0.5); }
+        button:active { transform: translateY(1px) scale(0.98); }
         button.secondary { background: linear-gradient(180deg, #576574 0%, #3d4852 100%); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         button.green { background: linear-gradient(180deg, #2ed573 0%, #26de81 100%); box-shadow: 0 4px 20px rgba(46,213,115,0.4); }
-        button:disabled { background: #444; box-shadow: none; cursor: not-allowed; opacity: 0.6; }
+        button:disabled { background: #444; box-shadow: none; cursor: not-allowed; opacity: 0.6; transform: none; }
+        
+        .mode-btn {
+            width: 280px;
+            padding: 25px;
+            margin: 10px;
+            border-radius: 16px;
+            text-align: left;
+        }
+        
+        .mode-btn .mode-title {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+        
+        .mode-btn .mode-desc {
+            font-size: 13px;
+            opacity: 0.8;
+            font-weight: normal;
+        }
         
         input { 
             padding: 16px 20px; 
@@ -72,75 +96,84 @@
             color: white;
             width: 280px;
             max-width: 90vw;
+            transition: all 0.2s;
         }
-        input:focus { outline: none; border-color: #ff4757; }
+        input:focus { outline: none; border-color: #ff4757; background: rgba(255,255,255,0.15); }
         input::placeholder { color: #666; }
         
-        #room-code-display { 
+        .room-code { 
             font-family: 'Bangers', cursive;
-            font-size: clamp(4rem, 20vw, 8rem);
-            letter-spacing: 12px; 
+            font-size: clamp(3rem, 15vw, 6rem);
+            letter-spacing: 10px; 
             color: #2ed573;
             text-shadow: 0 0 30px rgba(46,213,115,0.5);
-            margin: 20px 0;
+            margin: 15px 0;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 20px rgba(46,213,115,0.5); }
+            to { text-shadow: 0 0 40px rgba(46,213,115,0.8), 0 0 60px rgba(46,213,115,0.4); }
         }
         
         .players-container {
             background: rgba(255,255,255,0.05);
             border-radius: 20px;
-            padding: 30px;
-            min-width: 300px;
-            max-width: 600px;
+            padding: 25px;
+            min-width: 280px;
+            max-width: 500px;
             width: 90%;
         }
         
-        .players-container h3 { color: #888; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
+        .players-container h3 { color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; }
         
         .player-list { 
             list-style: none; 
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 15px;
+            gap: 10px;
         }
         
         .player-list li {
             background: rgba(255,255,255,0.1);
-            padding: 12px 24px;
-            border-radius: 30px;
-            font-size: 18px;
+            padding: 10px 18px;
+            border-radius: 25px;
+            font-size: 16px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            animation: popIn 0.3s ease;
+            gap: 6px;
+            animation: playerJoin 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        @keyframes playerJoin {
+            0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
         
         .player-list li.submitted { background: rgba(46, 213, 115, 0.3); border: 2px solid #2ed573; }
+        .player-list li.judge { background: rgba(255, 215, 0, 0.3); border: 2px solid #ffd700; }
         
-        @keyframes popIn {
-            0% { transform: scale(0); opacity: 0; }
-            70% { transform: scale(1.1); }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        
-        .player-count { color: #2ed573; font-size: 48px; font-weight: bold; }
+        .player-count { color: #2ed573; font-size: 42px; font-weight: bold; margin-bottom: 10px; }
         
         /* Cards */
         .prompt-card {
             background: linear-gradient(135deg, #2d2d44 0%, #1a1a2e 100%);
             border: 3px solid #ff4757;
             border-radius: 16px;
-            padding: 30px 40px;
-            font-size: clamp(1.2rem, 4vw, 2rem);
+            padding: 25px 30px;
+            font-size: clamp(1rem, 4vw, 1.5rem);
             font-weight: bold;
-            max-width: 700px;
-            margin: 20px auto;
+            max-width: 600px;
+            width: 90%;
+            margin: 15px auto;
             box-shadow: 0 10px 40px rgba(255,71,87,0.3);
-            animation: cardSlam 0.4s ease;
+            animation: cardSlam 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
         
         @keyframes cardSlam {
             0% { transform: scale(1.5) rotate(-5deg); opacity: 0; }
+            60% { transform: scale(0.95) rotate(1deg); }
             100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
         
@@ -148,71 +181,79 @@
             background: white;
             color: #1a1a2e;
             border-radius: 12px;
-            padding: 20px;
-            font-size: 16px;
+            padding: 15px;
+            font-size: 14px;
             font-weight: 600;
-            min-height: 120px;
+            min-height: 100px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s ease;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            animation: dealCard 0.3s ease backwards;
         }
         
-        .response-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 8px 25px rgba(0,0,0,0.4); }
-        .response-card.selected { border: 4px solid #2ed573; transform: scale(1.05); }
+        .response-card:nth-child(1) { animation-delay: 0s; }
+        .response-card:nth-child(2) { animation-delay: 0.05s; }
+        .response-card:nth-child(3) { animation-delay: 0.1s; }
+        .response-card:nth-child(4) { animation-delay: 0.15s; }
+        .response-card:nth-child(5) { animation-delay: 0.2s; }
+        .response-card:nth-child(6) { animation-delay: 0.25s; }
+        .response-card:nth-child(7) { animation-delay: 0.3s; }
+        
+        @keyframes dealCard {
+            0% { transform: translateY(-50px) rotate(-5deg); opacity: 0; }
+            100% { transform: translateY(0) rotate(0deg); opacity: 1; }
+        }
+        
+        .response-card:hover { transform: translateY(-8px) scale(1.03); box-shadow: 0 12px 30px rgba(0,0,0,0.4); }
+        .response-card:active { transform: scale(0.95); }
         
         .hand-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            padding: 20px;
-            max-width: 800px;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            padding: 15px;
+            max-width: 700px;
             width: 100%;
         }
         
-        /* Reveal */
-        .revealed-card {
-            background: white;
-            color: #1a1a2e;
-            border-radius: 16px;
-            padding: 30px 40px;
-            font-size: clamp(1.2rem, 4vw, 1.8rem);
-            font-weight: bold;
-            max-width: 600px;
-            margin: 20px auto;
-            animation: cardFlip 0.5s ease;
-            box-shadow: 0 10px 40px rgba(255,255,255,0.2);
-        }
-        
-        @keyframes cardFlip {
-            0% { transform: rotateY(90deg); opacity: 0; }
-            100% { transform: rotateY(0deg); opacity: 1; }
-        }
-        
+        /* Revealed cards */
         .revealed-cards-list {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 12px;
             justify-content: center;
-            margin: 20px 0;
+            margin: 15px 0;
+            max-width: 600px;
         }
         
         .mini-card {
             background: white;
             color: #1a1a2e;
             border-radius: 10px;
-            padding: 15px 20px;
-            font-size: 14px;
+            padding: 12px 16px;
+            font-size: 13px;
             font-weight: 600;
-            max-width: 200px;
+            max-width: 180px;
             cursor: pointer;
             transition: all 0.2s;
+            animation: cardFlip 0.5s ease;
         }
         
-        .mini-card:hover { transform: scale(1.05); }
-        .mini-card.winner { border: 4px solid #ffd700; background: #fffde7; }
+        @keyframes cardFlip {
+            0% { transform: rotateY(90deg) scale(0.8); opacity: 0; }
+            100% { transform: rotateY(0deg) scale(1); opacity: 1; }
+        }
+        
+        .mini-card:hover { transform: scale(1.05); box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+        .mini-card.winner { border: 3px solid #ffd700; background: linear-gradient(135deg, #fffde7 0%, #fff9c4 100%); animation: winnerGlow 1s ease infinite alternate; }
+        
+        @keyframes winnerGlow {
+            from { box-shadow: 0 0 10px rgba(255,215,0,0.5); }
+            to { box-shadow: 0 0 30px rgba(255,215,0,0.8); }
+        }
         
         /* Judge Badge */
         .judge-badge {
@@ -222,7 +263,13 @@
             border-radius: 20px;
             font-weight: bold;
             font-size: 14px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            animation: badgeBounce 0.5s ease;
+        }
+        
+        @keyframes badgeBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
         
         /* Winner Screen */
@@ -230,32 +277,29 @@
             background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
             color: #1a1a2e;
             border-radius: 16px;
-            padding: 30px 40px;
-            font-size: clamp(1.2rem, 4vw, 1.8rem);
+            padding: 25px 35px;
+            font-size: clamp(1rem, 4vw, 1.4rem);
             font-weight: bold;
-            max-width: 600px;
-            margin: 20px auto;
+            max-width: 500px;
+            margin: 15px auto;
             box-shadow: 0 10px 40px rgba(255,215,0,0.4);
-            animation: winnerPop 0.5s ease;
+            animation: winnerPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
         
         @keyframes winnerPop {
-            0% { transform: scale(0); }
-            70% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+            0% { transform: scale(0) rotate(-10deg); }
+            70% { transform: scale(1.1) rotate(3deg); }
+            100% { transform: scale(1) rotate(0deg); }
         }
         
-        .winner-name {
-            font-size: 48px;
-            margin: 20px 0;
-        }
+        .winner-name { font-size: 36px; margin: 15px 0; animation: winnerPop 0.6s ease; }
         
         /* Leaderboard */
         .leaderboard {
             background: rgba(255,255,255,0.05);
-            border-radius: 20px;
-            padding: 30px;
-            max-width: 400px;
+            border-radius: 16px;
+            padding: 20px;
+            max-width: 350px;
             width: 90%;
         }
         
@@ -263,193 +307,266 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 20px;
+            padding: 12px 15px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
+            animation: slideIn 0.3s ease backwards;
+        }
+        
+        .leaderboard-item:nth-child(1) { animation-delay: 0s; }
+        .leaderboard-item:nth-child(2) { animation-delay: 0.1s; }
+        .leaderboard-item:nth-child(3) { animation-delay: 0.2s; }
+        
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
         
         .leaderboard-item:last-child { border-bottom: none; }
         .leaderboard-item.first { background: rgba(255,215,0,0.2); border-radius: 10px; }
+        .score { font-size: 22px; font-weight: bold; color: #2ed573; }
         
-        .score { font-size: 24px; font-weight: bold; color: #2ed573; }
-        
-        /* Status indicators */
-        .round-info { color: #888; font-size: 14px; margin-bottom: 20px; }
-        .pulse-dot { display: inline-block; width: 10px; height: 10px; background: #2ed573; border-radius: 50%; margin-left: 10px; animation: pulse 1.5s infinite; }
+        /* Status */
+        .round-info { color: #888; font-size: 13px; margin-bottom: 15px; }
+        .pulse-dot { display: inline-block; width: 8px; height: 8px; background: #2ed573; border-radius: 50%; margin-left: 8px; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.5); } }
         
-        .waiting-emoji { font-size: 80px; margin-bottom: 20px; animation: bounce 1s infinite; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        .waiting-emoji { font-size: 60px; margin-bottom: 15px; animation: bounce 1s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
         
         .error-msg { color: #ff4757; margin-top: 15px; font-weight: bold; }
         
         .confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
+        
+        /* Sound toggle */
+        .sound-toggle {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 100;
+            padding: 0;
+            margin: 0;
+            box-shadow: none;
+        }
+        
+        .sound-toggle:hover { background: rgba(255,255,255,0.2); transform: none; }
+        
+        /* Progress bar */
+        .progress-bar {
+            width: 100%;
+            max-width: 400px;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            margin: 15px auto;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2ed573, #26de81);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        
+        .url-display {
+            color: #2ed573;
+            font-size: 16px;
+            margin-bottom: 5px;
+            word-break: break-all;
+        }
     </style>
 </head>
 <body>
+
+    <button class="sound-toggle" onclick="toggleSound()" id="sound-btn">🔊</button>
 
     <!-- START SCREEN -->
     <div id="start-screen" class="screen">
         <h1 class="logo">TRASH TALK</h1>
         <p class="tagline">A party game for terrible people</p>
-        <button onclick="hostGame()">🖥️ Host Game</button>
+        <button onclick="showModeSelect()">🎮 Host Game</button>
         <button onclick="showJoinScreen()" class="secondary">📱 Join Game</button>
     </div>
 
-    <!-- HOST LOBBY -->
+    <!-- MODE SELECT -->
+    <div id="mode-screen" class="screen hidden">
+        <h1 class="logo" style="font-size: 2.5rem;">HOST A GAME</h1>
+        <p style="color: #888; margin-bottom: 30px;">How are you playing?</p>
+        
+        <button class="mode-btn" onclick="showPhonePartySetup()">
+            <div class="mode-title">📱 Phone Party</div>
+            <div class="mode-desc">Everyone plays on their phones. No TV needed. You play too!</div>
+        </button>
+        
+        <button class="mode-btn secondary" onclick="hostTVMode()">
+            <div class="mode-title">🖥️ TV Mode</div>
+            <div class="mode-desc">Display game on a TV/laptop. Players join on phones.</div>
+        </button>
+        
+        <button onclick="showStartScreen()" class="secondary" style="margin-top: 20px; padding: 12px 24px; font-size: 14px;">← Back</button>
+    </div>
+
+    <!-- PHONE PARTY SETUP -->
+    <div id="phone-party-setup" class="screen hidden">
+        <h1 class="logo" style="font-size: 2.5rem;">PHONE PARTY</h1>
+        <p style="color: #888; margin-bottom: 20px;">Enter your name to host</p>
+        <input type="text" id="host-name" placeholder="Your Name" maxlength="12" autocomplete="off">
+        <br>
+        <button class="green" onclick="hostPhoneParty()">🚀 Create Game</button>
+        <button onclick="showModeSelect()" class="secondary" style="margin-top: 20px; padding: 12px 24px; font-size: 14px;">← Back</button>
+    </div>
+
+    <!-- HOST LOBBY (TV MODE) -->
     <div id="host-screen" class="screen hidden">
-        <h2 style="color: #888; font-size: 16px; text-transform: uppercase; letter-spacing: 2px;">Join at</h2>
-        <p style="color:#2ed573; font-size: 18px; margin-bottom: 10px;" id="join-url"></p>
-        <div id="room-code-display">????</div>
+        <p style="color: #888; font-size: 14px;">Join at</p>
+        <p class="url-display" id="join-url"></p>
+        <div class="room-code" id="room-code-display">????</div>
         
         <div class="players-container">
-            <h3>Players Joined</h3>
+            <h3>Players</h3>
             <div class="player-count" id="player-count">0</div>
             <ul id="players-list" class="player-list"></ul>
         </div>
         
-        <button id="start-btn" class="green" onclick="startGame()" disabled style="margin-top:30px; padding:20px 60px; font-size:24px;">
+        <button id="start-btn" class="green" onclick="startGame()" disabled style="margin-top: 25px; padding: 18px 50px; font-size: 20px;">
             🚀 Start Game
         </button>
-        <p style="color:#888; font-size:12px; margin-top:10px;">Need at least 3 players</p>
+        <p style="color:#888; font-size:12px; margin-top:8px;">Need at least 3 players</p>
     </div>
 
-    <!-- HOST GAME SCREEN -->
-    <div id="host-game-screen" class="screen hidden">
-        <div class="round-info">Round <span id="host-round">1</span> of <span id="host-max-rounds">10</span></div>
-        <div class="judge-badge">👑 Judge: <span id="host-judge-name">???</span></div>
+    <!-- PHONE PARTY LOBBY -->
+    <div id="phone-lobby-screen" class="screen hidden">
+        <p style="color: #888; font-size: 14px;">Share this code</p>
+        <p class="url-display" id="phone-join-url"></p>
+        <div class="room-code" id="phone-room-code">????</div>
         
-        <div class="prompt-card" id="host-prompt">Loading...</div>
+        <div class="players-container">
+            <h3>Players</h3>
+            <ul id="phone-players-list" class="player-list"></ul>
+        </div>
         
-        <div class="players-container" style="margin-top: 30px;">
-            <h3>Waiting for answers... <span id="submit-count">0</span>/<span id="submit-total">0</span></h3>
-            <ul id="game-players-list" class="player-list"></ul>
+        <button id="phone-start-btn" class="green" onclick="startGame()" disabled style="margin-top: 25px; padding: 18px 50px; font-size: 20px;">
+            🚀 Start Game
+        </button>
+        <p style="color:#888; font-size:12px; margin-top:8px;">Need at least 3 players</p>
+    </div>
+
+    <!-- GAME SCREEN (UNIVERSAL) -->
+    <div id="game-screen" class="screen hidden">
+        <div class="round-info">Round <span id="game-round">1</span> of <span id="game-max-rounds">10</span></div>
+        <div class="judge-badge" id="game-judge-badge">👑 Judge: ???</div>
+        <div class="prompt-card" id="game-prompt">Loading...</div>
+        
+        <div id="game-hand-section">
+            <p style="color:#888; margin: 15px 0; font-size: 14px;">Tap a card to play</p>
+            <div class="hand-container" id="game-hand"></div>
+        </div>
+        
+        <div id="game-judge-section" class="hidden">
+            <p style="color:#888; margin: 15px 0;">👑 You're the judge! Wait for answers<span class="pulse-dot"></span></p>
+        </div>
+        
+        <div id="game-waiting-section" class="hidden">
+            <div class="players-container" style="margin-top: 20px;">
+                <h3>Waiting for answers <span id="submit-progress"></span></h3>
+                <div class="progress-bar"><div class="progress-fill" id="submit-bar" style="width: 0%"></div></div>
+                <ul id="game-players-status" class="player-list"></ul>
+            </div>
         </div>
     </div>
 
-    <!-- HOST REVEAL SCREEN -->
-    <div id="host-reveal-screen" class="screen hidden">
+    <!-- SUBMITTED SCREEN -->
+    <div id="submitted-screen" class="screen hidden">
+        <div style="font-size: 60px; margin-bottom: 15px; animation: bounce 1s infinite;">✅</div>
+        <h2>Card Submitted!</h2>
+        <p style="color:#888; margin-top: 15px;">Waiting for others<span class="pulse-dot"></span></p>
+    </div>
+
+    <!-- REVEAL SCREEN -->
+    <div id="reveal-screen" class="screen hidden">
         <div class="round-info">Round <span id="reveal-round">1</span></div>
-        <div class="prompt-card" id="reveal-prompt" style="font-size: 1.2rem;">Loading...</div>
+        <div class="prompt-card" id="reveal-prompt" style="font-size: 1rem;">Loading...</div>
         
         <div class="revealed-cards-list" id="revealed-cards"></div>
         
-        <button id="reveal-btn" class="green" onclick="revealNext()" style="margin-top: 20px;">
-            👆 Reveal Next Card
-        </button>
-        <p id="reveal-status" style="color:#888; margin-top:10px;"></p>
-    </div>
-
-    <!-- HOST WINNER SCREEN -->
-    <div id="host-winner-screen" class="screen hidden">
-        <h2 style="color: #ffd700; margin-bottom: 10px;">🏆 WINNER 🏆</h2>
-        <div class="winner-name" id="winner-display">🎉 Player</div>
-        
-        <div class="prompt-card" id="winner-prompt" style="font-size: 1rem; margin-bottom: 10px;">Prompt</div>
-        <div class="winner-card" id="winner-card">Winning answer</div>
-        
-        <div class="leaderboard" style="margin-top: 30px;">
-            <h3 style="color:#888; margin-bottom: 15px;">SCORES</h3>
-            <div id="scores-list"></div>
+        <div id="reveal-controls">
+            <button id="reveal-btn" class="green" onclick="revealNext()" style="margin-top: 15px;">
+                👆 Reveal Next
+            </button>
+            <p id="reveal-status" style="color:#888; margin-top:8px; font-size: 13px;"></p>
         </div>
         
-        <button class="green" onclick="nextRound()" style="margin-top: 30px;">
+        <div id="judge-pick-section" class="hidden">
+            <p style="color:#ffd700; margin: 15px 0;">👑 Pick the winner!</p>
+        </div>
+        
+        <div id="watch-section" class="hidden">
+            <p style="color:#888; margin: 15px 0;">Waiting for judge<span class="pulse-dot"></span></p>
+        </div>
+    </div>
+
+    <!-- WINNER SCREEN -->
+    <div id="winner-screen" class="screen hidden">
+        <h2 style="color: #ffd700;">🏆 WINNER 🏆</h2>
+        <div class="winner-name" id="winner-display">🎉 Player</div>
+        <div class="prompt-card" id="winner-prompt" style="font-size: 0.9rem; padding: 20px;"></div>
+        <div class="winner-card" id="winner-card">Winning answer</div>
+        
+        <div class="leaderboard" style="margin-top: 25px;" id="winner-scores-section">
+            <h3 style="color:#888; margin-bottom: 12px; font-size: 12px;">SCORES</h3>
+            <div id="winner-scores"></div>
+        </div>
+        
+        <button id="next-round-btn" class="green" onclick="nextRound()" style="margin-top: 25px;">
             ➡️ Next Round
         </button>
     </div>
 
-    <!-- HOST GAME OVER -->
-    <div id="host-gameover-screen" class="screen hidden">
-        <h1 style="font-size: 64px; margin-bottom: 20px;">🏆</h1>
-        <h2 style="margin-bottom: 30px;">GAME OVER</h2>
-        
+    <!-- GAME OVER -->
+    <div id="gameover-screen" class="screen hidden">
+        <div style="font-size: 60px; margin-bottom: 15px;">🏆</div>
+        <h2 style="margin-bottom: 20px;">GAME OVER</h2>
         <div class="winner-name" id="final-winner">Winner!</div>
         
-        <div class="leaderboard" style="margin-top: 30px;">
-            <h3 style="color:#888; margin-bottom: 15px;">FINAL SCORES</h3>
+        <div class="leaderboard" style="margin-top: 25px;">
+            <h3 style="color:#888; margin-bottom: 12px; font-size: 12px;">FINAL SCORES</h3>
             <div id="final-scores"></div>
         </div>
         
-        <button class="green" onclick="playAgain()" style="margin-top: 30px;">🔄 Play Again</button>
+        <button id="play-again-btn" class="green" onclick="playAgain()" style="margin-top: 25px;">🔄 Play Again</button>
     </div>
 
-    <!-- PLAYER JOIN SCREEN -->
+    <!-- JOIN SCREEN -->
     <div id="join-screen" class="screen hidden">
-        <h1 class="logo" style="font-size: 3rem;">TRASH TALK</h1>
-        <h2 style="margin-bottom: 30px; color: #ccc;">Join the Game</h2>
+        <h1 class="logo" style="font-size: 2.5rem;">TRASH TALK</h1>
+        <p style="color: #888; margin-bottom: 25px;">Join a game</p>
         <input type="text" id="p-name" placeholder="Your Name" maxlength="12" autocomplete="off"><br>
         <input type="text" id="p-code" placeholder="Room Code" maxlength="4" style="text-transform:uppercase" autocomplete="off"><br>
-        <button onclick="joinGame()">🎮 Enter</button>
+        <button onclick="joinGame()">🎮 Join</button>
         <p class="error-msg" id="error-msg"></p>
-        <button onclick="showStartScreen()" class="secondary" style="margin-top: 30px; padding: 10px 20px; font-size: 14px;">← Back</button>
+        <button onclick="showStartScreen()" class="secondary" style="margin-top: 25px; padding: 12px 24px; font-size: 14px;">← Back</button>
     </div>
 
-    <!-- PLAYER WAITING IN LOBBY -->
+    <!-- PLAYER WAITING -->
     <div id="waiting-screen" class="screen hidden">
         <div class="waiting-emoji" id="my-avatar">🎉</div>
-        <div style="font-size: 32px; font-weight: bold;" id="my-name-display"></div>
-        <p style="color:#888; font-size:18px; margin-top:20px;">
-            Waiting for host to start<span class="pulse-dot"></span>
-        </p>
+        <div style="font-size: 28px; font-weight: bold;" id="my-name-display"></div>
+        <p style="color:#888; font-size:16px; margin-top:15px;">Waiting for host<span class="pulse-dot"></span></p>
     </div>
 
-    <!-- PLAYER CARD SELECTION -->
-    <div id="player-game-screen" class="screen hidden">
-        <div class="judge-badge" id="player-judge-badge">👑 Judge: ???</div>
-        <div class="prompt-card" id="player-prompt" style="font-size: 1.1rem; padding: 20px;">Loading...</div>
-        
-        <p style="color:#888; margin: 20px 0;">Tap a card to play it</p>
-        
-        <div class="hand-container" id="player-hand"></div>
-    </div>
-
-    <!-- PLAYER WAITING (SUBMITTED) -->
-    <div id="player-submitted-screen" class="screen hidden">
-        <div style="font-size: 64px; margin-bottom: 20px;">✅</div>
-        <h2>Card Submitted!</h2>
-        <p style="color:#888; margin-top: 20px;">Waiting for other players<span class="pulse-dot"></span></p>
-    </div>
-
-    <!-- PLAYER IS JUDGE -->
-    <div id="player-judge-screen" class="screen hidden">
-        <div style="font-size: 64px; margin-bottom: 20px;">👑</div>
-        <h2>You're the Judge!</h2>
-        <div class="prompt-card" id="judge-prompt" style="font-size: 1rem; padding: 20px;">Loading...</div>
-        <p style="color:#888; margin-top: 20px;">Watch the TV and pick your favorite<span class="pulse-dot"></span></p>
-        
-        <div id="judge-cards-container" class="hidden" style="margin-top: 30px;">
-            <h3 style="margin-bottom: 15px;">Pick the Winner:</h3>
-            <div class="revealed-cards-list" id="judge-cards"></div>
-        </div>
-    </div>
-
-    <!-- PLAYER WATCH REVEAL -->
-    <div id="player-watch-screen" class="screen hidden">
-        <div style="font-size: 64px; margin-bottom: 20px;">📺</div>
-        <h2>Look at the TV!</h2>
-        <p style="color:#888; margin-top: 20px;">The judge is revealing answers<span class="pulse-dot"></span></p>
-    </div>
-
-    <!-- PLAYER ROUND WINNER -->
-    <div id="player-winner-screen" class="screen hidden">
-        <div style="font-size: 80px; margin-bottom: 20px;" id="player-win-emoji">🎉</div>
-        <h2 id="player-win-text">Winner!</h2>
-        <div class="winner-card" id="player-win-card" style="margin-top: 20px;">Winning card</div>
-        <p style="color:#888; margin-top: 30px;">Waiting for next round<span class="pulse-dot"></span></p>
-    </div>
-
-    <!-- PLAYER GAME OVER -->
-    <div id="player-gameover-screen" class="screen hidden">
-        <div style="font-size: 64px; margin-bottom: 20px;">🏆</div>
-        <h2>Game Over!</h2>
-        <p style="color:#888; margin-top: 20px;">Check the TV for final scores</p>
-    </div>
-
-    <!-- GAME ENDED (DISCONNECT) -->
+    <!-- GAME ENDED -->
     <div id="ended-screen" class="screen hidden">
-        <h1 style="font-size: 48px; margin-bottom: 20px;">💀</h1>
+        <div style="font-size: 50px; margin-bottom: 15px;">💀</div>
         <h2>Game Over</h2>
-        <p id="end-reason" style="color: #888; margin: 20px 0;"></p>
-        <button onclick="location.reload()">🔄 Play Again</button>
+        <p id="end-reason" style="color: #888; margin: 15px 0;"></p>
+        <button onclick="location.reload()">🔄 New Game</button>
     </div>
 
     <canvas id="confetti" class="confetti hidden"></canvas>
@@ -458,9 +575,83 @@
     <script>
         const socket = io();
         let playerCount = 0;
-        let myHand = [];
-        let revealedCards = [];
         let isHost = false;
+        let isJudge = false;
+        let phonePartyMode = false;
+        let revealedCards = [];
+        let soundEnabled = true;
+        let audioCtx = null;
+        
+        // ============ SOUND EFFECTS ============
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            switch(type) {
+                case 'join':
+                    oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.2);
+                    break;
+                case 'submit':
+                    oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.15);
+                    break;
+                case 'reveal':
+                    oscillator.type = 'triangle';
+                    oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(500, audioCtx.currentTime + 0.15);
+                    gainNode.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.2);
+                    break;
+                case 'winner':
+                    [0, 0.15, 0.3].forEach((delay, i) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.frequency.setValueAtTime([523, 659, 784][i], audioCtx.currentTime + delay);
+                        gain.gain.setValueAtTime(0.3, audioCtx.currentTime + delay);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + delay + 0.3);
+                        osc.start(audioCtx.currentTime + delay);
+                        osc.stop(audioCtx.currentTime + delay + 0.3);
+                    });
+                    break;
+                case 'click':
+                    oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.05);
+                    break;
+            }
+        }
+        
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('sound-btn').innerText = soundEnabled ? '🔊' : '🔇';
+            if (soundEnabled) playSound('click');
+        }
         
         // ============ SCREEN NAVIGATION ============
         function showScreen(screenId) {
@@ -469,37 +660,55 @@
         }
         
         function showStartScreen() { showScreen('start-screen'); }
-        function showJoinScreen() { 
-            showScreen('join-screen'); 
-            document.getElementById('p-name').focus(); 
-        }
-
+        function showModeSelect() { playSound('click'); showScreen('mode-screen'); }
+        function showJoinScreen() { playSound('click'); showScreen('join-screen'); document.getElementById('p-name').focus(); }
+        function showPhonePartySetup() { playSound('click'); showScreen('phone-party-setup'); document.getElementById('host-name').focus(); }
+        
         // ============ HOST FUNCTIONS ============
-        function hostGame() {
+        function hostTVMode() {
+            playSound('click');
             isHost = true;
-            socket.emit('create_game');
+            phonePartyMode = false;
+            socket.emit('create_game', { phonePartyMode: false });
         }
-
+        
+        function hostPhoneParty() {
+            const name = document.getElementById('host-name').value.trim();
+            if (!name) {
+                alert('Enter your name!');
+                return;
+            }
+            playSound('click');
+            isHost = true;
+            phonePartyMode = true;
+            socket.emit('create_game', { phonePartyMode: true, hostName: name });
+        }
+        
         function startGame() {
+            playSound('click');
             socket.emit('start_game');
         }
         
         function revealNext() {
+            playSound('reveal');
             socket.emit('reveal_next');
         }
         
         function nextRound() {
+            playSound('click');
             socket.emit('next_round');
         }
         
         function playAgain() {
+            playSound('click');
             socket.emit('play_again');
         }
         
-        function updateStartButton() {
-            document.getElementById('start-btn').disabled = playerCount < 3;
+        function updateStartButton(count, btnId) {
+            const btn = document.getElementById(btnId);
+            if (btn) btn.disabled = count < 3;
         }
-
+        
         // ============ PLAYER FUNCTIONS ============
         function joinGame() {
             const name = document.getElementById('p-name').value.trim();
@@ -509,19 +718,22 @@
             if (!name) { document.getElementById('error-msg').innerText = 'Enter your name!'; return; }
             if (!code || code.length < 4) { document.getElementById('error-msg').innerText = 'Enter the 4-letter code!'; return; }
             
+            playSound('click');
             socket.emit('join_game', { playerName: name, roomCode: code });
         }
         
         function submitCard(index) {
+            playSound('submit');
             socket.emit('submit_card', index);
         }
         
         function pickWinner(index) {
+            playSound('click');
             socket.emit('pick_winner', index);
         }
         
         function renderHand(hand) {
-            const container = document.getElementById('player-hand');
+            const container = document.getElementById('game-hand');
             container.innerHTML = '';
             hand.forEach((card, i) => {
                 const div = document.createElement('div');
@@ -531,124 +743,215 @@
                 container.appendChild(div);
             });
         }
-
-        // ============ SOCKET EVENTS - LOBBY ============
-        socket.on('game_created', (code) => {
-            showScreen('host-screen');
-            document.getElementById('room-code-display').innerText = code;
-            document.getElementById('join-url').innerText = window.location.origin;
-        });
-
-        socket.on('player_joined', (data) => {
-            playerCount = data.playerCount;
-            document.getElementById('player-count').innerText = playerCount;
-            const li = document.createElement('li');
-            li.innerHTML = `<span>${data.avatar}</span> ${data.playerName}`;
-            li.id = `player-${data.playerName}`;
-            document.getElementById('players-list').appendChild(li);
-            updateStartButton();
+        
+        function renderPlayers(players, listId) {
+            const list = document.getElementById(listId);
+            list.innerHTML = '';
+            players.forEach(p => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${p.avatar}</span> ${p.name}`;
+                list.appendChild(li);
+            });
+        }
+        
+        // ============ SOCKET EVENTS ============
+        
+        socket.on('game_created', (data) => {
+            playSound('join');
+            if (data.phonePartyMode) {
+                showScreen('phone-lobby-screen');
+                document.getElementById('phone-room-code').innerText = data.roomCode;
+                document.getElementById('phone-join-url').innerText = window.location.origin;
+                const list = document.getElementById('phone-players-list');
+                list.innerHTML = `<li><span>${data.hostAvatar}</span> ${data.hostName} (you)</li>`;
+                playerCount = 1;
+                updateStartButton(playerCount, 'phone-start-btn');
+            } else {
+                showScreen('host-screen');
+                document.getElementById('room-code-display').innerText = data.roomCode;
+                document.getElementById('join-url').innerText = window.location.origin;
+            }
         });
         
-        socket.on('player_left', (data) => {
+        socket.on('player_joined', (data) => {
+            playSound('join');
             playerCount = data.playerCount;
-            document.getElementById('player-count').innerText = playerCount;
-            updateStartButton();
+            
+            if (phonePartyMode && isHost) {
+                document.getElementById('phone-players-list').innerHTML = '';
+                data.players.forEach((p, i) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<span>${p.avatar}</span> ${p.name}${i === 0 ? ' (you)' : ''}`;
+                    document.getElementById('phone-players-list').appendChild(li);
+                });
+                updateStartButton(playerCount, 'phone-start-btn');
+            } else if (isHost) {
+                document.getElementById('player-count').innerText = playerCount;
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${data.avatar}</span> ${data.playerName}`;
+                document.getElementById('players-list').appendChild(li);
+                updateStartButton(playerCount, 'start-btn');
+            }
         });
-
+        
         socket.on('joined_success', (data) => {
+            playSound('join');
             showScreen('waiting-screen');
             document.getElementById('my-name-display').innerText = data.playerName;
             document.getElementById('my-avatar').innerText = data.avatar;
         });
-
+        
         socket.on('error_msg', (msg) => {
             document.getElementById('error-msg').innerText = msg;
         });
-
-        // ============ SOCKET EVENTS - GAME ============
         
-        // HOST: Round started
+        socket.on('game_starting', () => {
+            playSound('click');
+        });
+        
+        // Round start (Phone Party Mode - everyone gets this)
         socket.on('round_start', (data) => {
-            showScreen('host-game-screen');
-            document.getElementById('host-round').innerText = data.round;
-            document.getElementById('host-max-rounds').innerText = data.maxRounds;
-            document.getElementById('host-prompt').innerText = data.prompt;
-            document.getElementById('host-judge-name').innerText = `${data.judgeAvatar} ${data.judgeName}`;
-            document.getElementById('submit-count').innerText = '0';
-            document.getElementById('submit-total').innerText = playerCount - 1;
-            
-            // Reset player list
-            const list = document.getElementById('game-players-list');
-            list.innerHTML = '';
-        });
-        
-        // HOST: Player submitted
-        socket.on('player_submitted', (data) => {
-            document.getElementById('submit-count').innerText = data.submittedCount;
-            
-            const li = document.createElement('li');
-            li.className = 'submitted';
-            li.innerHTML = `<span>${data.playerAvatar}</span> ${data.playerName} ✓`;
-            document.getElementById('game-players-list').appendChild(li);
-        });
-        
-        // HOST: Start reveal
-        socket.on('start_reveal', (data) => {
-            showScreen('host-reveal-screen');
-            document.getElementById('reveal-prompt').innerText = data.prompt;
-            document.getElementById('revealed-cards').innerHTML = '';
-            document.getElementById('reveal-status').innerText = `0 of ${data.submissionCount} revealed`;
-            document.getElementById('reveal-btn').classList.remove('hidden');
+            playSound('reveal');
             revealedCards = [];
-        });
-        
-        // HOST: Card revealed
-        socket.on('card_revealed', (data) => {
-            if (isHost) {
-                const div = document.createElement('div');
-                div.className = 'mini-card';
-                div.innerText = data.card;
-                div.dataset.index = data.index;
-                document.getElementById('revealed-cards').appendChild(div);
+            isJudge = data.isJudge || false;
+            
+            if (data.phonePartyMode) {
+                showScreen('game-screen');
+                document.getElementById('game-round').innerText = data.round;
+                document.getElementById('game-max-rounds').innerText = data.maxRounds;
+                document.getElementById('game-prompt').innerText = data.prompt;
+                document.getElementById('game-judge-badge').innerText = `👑 Judge: ${data.judgeAvatar} ${data.judgeName}`;
                 
-                document.getElementById('reveal-status').innerText = data.isLast ? 
-                    'All cards revealed! Judge is picking...' : 
-                    `${data.index + 1} revealed`;
-                
-                if (data.isLast) {
-                    document.getElementById('reveal-btn').classList.add('hidden');
+                if (isJudge) {
+                    document.getElementById('game-hand-section').classList.add('hidden');
+                    document.getElementById('game-judge-section').classList.remove('hidden');
+                    document.getElementById('game-waiting-section').classList.remove('hidden');
+                    document.getElementById('submit-progress').innerText = `0/${data.playerCount - 1}`;
+                    document.getElementById('submit-bar').style.width = '0%';
+                } else {
+                    document.getElementById('game-hand-section').classList.remove('hidden');
+                    document.getElementById('game-judge-section').classList.add('hidden');
+                    document.getElementById('game-waiting-section').classList.add('hidden');
+                    renderHand(data.hand);
                 }
-            } else {
-                // Judge sees cards for picking
-                revealedCards.push({ card: data.card, index: data.index });
-                renderJudgeCards();
+            } else if (isHost) {
+                // TV Mode host
+                showScreen('game-screen');
+                document.getElementById('game-round').innerText = data.round;
+                document.getElementById('game-max-rounds').innerText = data.maxRounds;
+                document.getElementById('game-prompt').innerText = data.prompt;
+                document.getElementById('game-judge-badge').innerText = `👑 Judge: ${data.judgeAvatar} ${data.judgeName}`;
+                document.getElementById('game-hand-section').classList.add('hidden');
+                document.getElementById('game-judge-section').classList.add('hidden');
+                document.getElementById('game-waiting-section').classList.remove('hidden');
+                document.getElementById('submit-progress').innerText = '0/?';
             }
         });
         
-        function renderJudgeCards() {
-            const container = document.getElementById('judge-cards');
-            container.innerHTML = '';
-            document.getElementById('judge-cards-container').classList.remove('hidden');
+        // TV Mode player turn
+        socket.on('your_turn', (data) => {
+            playSound('reveal');
+            revealedCards = [];
+            isJudge = data.isJudge;
             
-            revealedCards.forEach((c) => {
-                const div = document.createElement('div');
-                div.className = 'mini-card';
-                div.innerText = c.card;
-                div.onclick = () => pickWinner(c.index);
-                container.appendChild(div);
-            });
-        }
+            if (isJudge) {
+                showScreen('game-screen');
+                document.getElementById('game-prompt').innerText = data.prompt;
+                document.getElementById('game-judge-badge').innerText = `👑 You are the Judge!`;
+                document.getElementById('game-hand-section').classList.add('hidden');
+                document.getElementById('game-judge-section').classList.remove('hidden');
+                document.getElementById('game-waiting-section').classList.add('hidden');
+            } else {
+                showScreen('game-screen');
+                document.getElementById('game-prompt').innerText = data.prompt;
+                document.getElementById('game-judge-badge').innerText = `👑 Judge: ${data.judgeName}`;
+                document.getElementById('game-hand-section').classList.remove('hidden');
+                document.getElementById('game-judge-section').classList.add('hidden');
+                document.getElementById('game-waiting-section').classList.add('hidden');
+                renderHand(data.hand);
+            }
+        });
         
-        // HOST: Round winner
+        socket.on('player_submitted', (data) => {
+            playSound('submit');
+            const pct = (data.submittedCount / data.totalPlayers) * 100;
+            document.getElementById('submit-progress').innerText = `${data.submittedCount}/${data.totalPlayers}`;
+            document.getElementById('submit-bar').style.width = pct + '%';
+        });
+        
+        socket.on('card_submitted', () => {
+            showScreen('submitted-screen');
+        });
+        
+        socket.on('start_reveal', (data) => {
+            showScreen('reveal-screen');
+            document.getElementById('reveal-prompt').innerText = data.prompt;
+            document.getElementById('revealed-cards').innerHTML = '';
+            document.getElementById('reveal-status').innerText = `0 of ${data.submissionCount}`;
+            document.getElementById('reveal-btn').classList.remove('hidden');
+            revealedCards = [];
+            
+            const canReveal = data.isJudge || (isHost && !phonePartyMode);
+            document.getElementById('reveal-controls').classList.toggle('hidden', !canReveal);
+            document.getElementById('judge-pick-section').classList.add('hidden');
+            document.getElementById('watch-section').classList.toggle('hidden', canReveal);
+        });
+        
+        socket.on('judge_reveal', (data) => {
+            showScreen('reveal-screen');
+            document.getElementById('reveal-prompt').innerText = data.prompt;
+            document.getElementById('revealed-cards').innerHTML = '';
+            document.getElementById('reveal-controls').classList.add('hidden');
+            document.getElementById('judge-pick-section').classList.add('hidden');
+            document.getElementById('watch-section').classList.remove('hidden');
+        });
+        
+        socket.on('watch_reveal', () => {
+            showScreen('reveal-screen');
+            document.getElementById('reveal-controls').classList.add('hidden');
+            document.getElementById('judge-pick-section').classList.add('hidden');
+            document.getElementById('watch-section').classList.remove('hidden');
+        });
+        
+        socket.on('card_revealed', (data) => {
+            playSound('reveal');
+            
+            const div = document.createElement('div');
+            div.className = 'mini-card';
+            div.innerText = data.card;
+            div.dataset.index = data.index;
+            
+            const canPick = data.isJudge || isJudge;
+            if (canPick) {
+                div.onclick = () => pickWinner(data.index);
+            }
+            
+            document.getElementById('revealed-cards').appendChild(div);
+            revealedCards.push({ card: data.card, index: data.index });
+            
+            document.getElementById('reveal-status').innerText = data.isLast 
+                ? 'All revealed!' 
+                : `${data.index + 1} revealed`;
+            
+            if (data.isLast) {
+                document.getElementById('reveal-btn').classList.add('hidden');
+                if (canPick) {
+                    document.getElementById('judge-pick-section').classList.remove('hidden');
+                    document.getElementById('watch-section').classList.add('hidden');
+                }
+            }
+        });
+        
         socket.on('round_winner', (data) => {
-            if (isHost) {
-                showScreen('host-winner-screen');
-                document.getElementById('winner-display').innerText = `${data.winnerAvatar} ${data.winnerName}`;
-                document.getElementById('winner-prompt').innerText = data.prompt;
-                document.getElementById('winner-card').innerText = data.winningCard;
-                
-                // Render scores
-                const scoresList = document.getElementById('scores-list');
+            playSound('winner');
+            showScreen('winner-screen');
+            document.getElementById('winner-display').innerText = data.isYou ? '🎉 YOU WON!' : `${data.winnerAvatar} ${data.winnerName}`;
+            document.getElementById('winner-prompt').innerText = data.prompt || '';
+            document.getElementById('winner-card').innerText = data.winningCard;
+            
+            if (data.scores) {
+                document.getElementById('winner-scores-section').classList.remove('hidden');
+                const scoresList = document.getElementById('winner-scores');
                 scoresList.innerHTML = '';
                 data.scores.sort((a, b) => b.score - a.score).forEach((p, i) => {
                     const div = document.createElement('div');
@@ -656,98 +959,72 @@
                     div.innerHTML = `<span>${p.avatar} ${p.name}</span><span class="score">${p.score}</span>`;
                     scoresList.appendChild(div);
                 });
-                
-                triggerConfetti();
             } else {
-                showScreen('player-winner-screen');
-                if (data.isYou) {
-                    document.getElementById('player-win-emoji').innerText = '🎉';
-                    document.getElementById('player-win-text').innerText = 'YOU WON!';
-                } else {
-                    document.getElementById('player-win-emoji').innerText = '👏';
-                    document.getElementById('player-win-text').innerText = `${data.winnerAvatar} ${data.winnerName} won!`;
-                }
-                document.getElementById('player-win-card').innerText = data.winningCard;
+                document.getElementById('winner-scores-section').classList.add('hidden');
             }
+            
+            // Show next round button only for host
+            const showBtn = data.phonePartyMode ? data.isHost : isHost;
+            document.getElementById('next-round-btn').classList.toggle('hidden', !showBtn);
+            
+            triggerConfetti();
         });
         
-        // PLAYER: Your turn
-        socket.on('your_turn', (data) => {
-            revealedCards = [];
-            if (data.isJudge) {
-                showScreen('player-judge-screen');
-                document.getElementById('judge-prompt').innerText = data.prompt;
-                document.getElementById('judge-cards-container').classList.add('hidden');
-                document.getElementById('judge-cards').innerHTML = '';
-            } else {
-                showScreen('player-game-screen');
-                document.getElementById('player-prompt').innerText = data.prompt;
-                document.getElementById('player-judge-badge').innerText = `👑 Judge: ${data.judgeName}`;
-                myHand = data.hand;
-                renderHand(myHand);
-            }
-        });
-        
-        // PLAYER: Card submitted
-        socket.on('card_submitted', () => {
-            showScreen('player-submitted-screen');
-        });
-        
-        // PLAYER: Judge reveal mode
-        socket.on('judge_reveal', (data) => {
-            showScreen('player-judge-screen');
-            document.getElementById('judge-prompt').innerText = data.prompt;
-        });
-        
-        // PLAYER: Watch reveal
-        socket.on('watch_reveal', () => {
-            showScreen('player-watch-screen');
-        });
-        
-        // GAME OVER
         socket.on('game_over', (data) => {
-            if (data.isHost) {
-                showScreen('host-gameover-screen');
-                document.getElementById('final-winner').innerText = `${data.winner.avatar} ${data.winner.name}`;
-                
-                const scoresList = document.getElementById('final-scores');
-                scoresList.innerHTML = '';
-                data.leaderboard.forEach((p, i) => {
-                    const div = document.createElement('div');
-                    div.className = 'leaderboard-item' + (i === 0 ? ' first' : '');
-                    div.innerHTML = `<span>${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : ''} ${p.avatar} ${p.name}</span><span class="score">${p.score}</span>`;
-                    scoresList.appendChild(div);
-                });
-                
-                triggerConfetti();
-            } else {
-                showScreen('player-gameover-screen');
-            }
+            playSound('winner');
+            showScreen('gameover-screen');
+            document.getElementById('final-winner').innerText = `${data.winner.avatar} ${data.winner.name}`;
+            
+            const scoresList = document.getElementById('final-scores');
+            scoresList.innerHTML = '';
+            data.leaderboard.forEach((p, i) => {
+                const div = document.createElement('div');
+                div.className = 'leaderboard-item' + (i === 0 ? ' first' : '');
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+                div.innerHTML = `<span>${medal} ${p.avatar} ${p.name}</span><span class="score">${p.score}</span>`;
+                scoresList.appendChild(div);
+            });
+            
+            const showBtn = data.phonePartyMode ? data.isHost : isHost;
+            document.getElementById('play-again-btn').classList.toggle('hidden', !showBtn);
+            
+            triggerConfetti();
         });
         
-        // RESET
         socket.on('reset_to_lobby', () => {
             showScreen('waiting-screen');
         });
         
         socket.on('back_to_lobby', (data) => {
-            showScreen('host-screen');
-            const list = document.getElementById('players-list');
-            list.innerHTML = '';
-            data.players.forEach(p => {
-                const li = document.createElement('li');
-                li.innerHTML = `<span>${p.avatar}</span> ${p.name}`;
-                list.appendChild(li);
-            });
-            playerCount = data.players.length;
-            document.getElementById('player-count').innerText = playerCount;
-            updateStartButton();
+            if (data.phonePartyMode) {
+                showScreen('phone-lobby-screen');
+                renderPlayers(data.players, 'phone-players-list');
+                playerCount = data.players.length;
+                updateStartButton(playerCount, 'phone-start-btn');
+            } else {
+                showScreen('host-screen');
+                renderPlayers(data.players, 'players-list');
+                playerCount = data.players.length;
+                document.getElementById('player-count').innerText = playerCount;
+                updateStartButton(playerCount, 'start-btn');
+            }
         });
         
-        // DISCONNECTION
         socket.on('game_ended', (reason) => {
             document.getElementById('end-reason').innerText = reason;
             showScreen('ended-screen');
+        });
+        
+        socket.on('player_left', (data) => {
+            playerCount = data.playerCount;
+            if (isHost) {
+                if (phonePartyMode) {
+                    updateStartButton(playerCount, 'phone-start-btn');
+                } else {
+                    document.getElementById('player-count').innerText = playerCount;
+                    updateStartButton(playerCount, 'start-btn');
+                }
+            }
         });
         
         // ============ CONFETTI ============
@@ -759,16 +1036,17 @@
             canvas.height = window.innerHeight;
             
             const particles = [];
-            const colors = ['#ff4757', '#2ed573', '#ffd700', '#ff6b6b', '#5352ed', '#1e90ff'];
+            const colors = ['#ff4757', '#2ed573', '#ffd700', '#ff6b6b', '#5352ed', '#1e90ff', '#ff9ff3', '#54a0ff'];
             
-            for (let i = 0; i < 150; i++) {
+            for (let i = 0; i < 120; i++) {
                 particles.push({
                     x: Math.random() * canvas.width,
                     y: Math.random() * canvas.height - canvas.height,
-                    r: Math.random() * 6 + 4,
-                    d: Math.random() * 150 + 100,
+                    r: Math.random() * 6 + 3,
                     color: colors[Math.floor(Math.random() * colors.length)],
-                    tilt: Math.random() * 10 - 5
+                    tilt: Math.random() * 10 - 5,
+                    tiltAngle: Math.random() * Math.PI,
+                    tiltSpeed: Math.random() * 0.1 + 0.05
                 });
             }
             
@@ -778,13 +1056,19 @@
                 particles.forEach(p => {
                     ctx.beginPath();
                     ctx.fillStyle = p.color;
-                    ctx.fillRect(p.x, p.y, p.r, p.r * 1.5);
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.tiltAngle);
+                    ctx.fillRect(-p.r/2, -p.r, p.r, p.r * 2);
+                    ctx.restore();
+                    
                     p.y += 3;
-                    p.x += p.tilt * 0.1;
+                    p.x += Math.sin(p.tiltAngle) * 2;
+                    p.tiltAngle += p.tiltSpeed;
                 });
                 
                 frame++;
-                if (frame < 180) {
+                if (frame < 150) {
                     requestAnimationFrame(draw);
                 } else {
                     canvas.classList.add('hidden');
@@ -793,12 +1077,17 @@
             draw();
         }
         
-        // ============ KEYBOARD SUPPORT ============
+        // ============ KEYBOARD ============
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !document.getElementById('join-screen').classList.contains('hidden')) {
-                joinGame();
+            if (e.key === 'Enter') {
+                if (!document.getElementById('join-screen').classList.contains('hidden')) joinGame();
+                if (!document.getElementById('phone-party-setup').classList.contains('hidden')) hostPhoneParty();
             }
         });
+        
+        // Init audio on first interaction
+        document.addEventListener('click', () => initAudio(), { once: true });
+        document.addEventListener('touchstart', () => initAudio(), { once: true });
     </script>
 </body>
 </html>
