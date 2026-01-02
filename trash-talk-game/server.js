@@ -3,96 +3,27 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const path = require('path');
+const fs = require('fs');
 
 app.use(express.static(path.join(__dirname, 'public')));
 
 const games = {}; 
 
-// ============ CARD DECKS ============
-const PROMPT_CARDS = [
-    "Sex is great, but have you ever tried ______?",
-    "What's the real reason I failed that exam?",
-    "My therapist said I need to stop ______.",
-    "The RA caught me ______.",
-    "I blacked out and woke up with ______.",
-    "What's in my browser history at 3am?",
-    "My Tinder bio just says ______.",
-    "The worst thing to say during a job interview: ______.",
-    "I'm not an alcoholic, I just really enjoy ______.",
-    "What ruined Thanksgiving dinner?",
-    "______ is why I'm in debt.",
-    "My parents would disown me if they knew about ______.",
-    "What's keeping me up at night?",
-    "The walk of shame was made worse by ______.",
-    "I spent my entire paycheck on ______.",
-    "What did I drunk text my ex?",
-    "My roommate walked in on me ______.",
-    "The real pandemic was ______ all along.",
-    "What's that smell in my apartment?",
-    "I peaked in high school because of ______.",
-    "What's the worst thing to yell during graduation?",
-    "My professor reported me to the dean for ______.",
-    "______ is my love language.",
-    "I'm dropping out because of ______.",
-    "What's in the mysterious Tupperware in my fridge?",
-];
+// ============ LOAD CARDS FROM FILE ============
+function loadCards() {
+    const data = fs.readFileSync(path.join(__dirname, 'cards.json'), 'utf8');
+    return JSON.parse(data);
+}
 
-const RESPONSE_CARDS = [
-    "Crying in the campus library at 2am",
-    "A Juul pod and a dream",
-    "Accidentally calling your professor 'Mom'",
-    "The Walk of Shame in last night's Halloween costume",
-    "Microdosing mushrooms during a family Zoom call",
-    "Sending a nude to the group chat",
-    "Getting chlamydia from a bean bag chair",
-    "A bong made out of a Gatorade bottle and despair",
-    "Thinking you can fix him/her",
-    "An emotional support vape",
-    "Blacking out and buying crypto",
-    "Your ex's finsta",
-    "Crying during sex",
-    "A $200 DoorDash order at 4am",
-    "Academic probation",
-    "Hot girl summer (depression edition)",
-    "LinkedIn influencers",
-    "Posting thirst traps for validation",
-    "White Claw and regret",
-    "The guy with an acoustic guitar at parties",
-    "Undiagnosed ADHD",
-    "Daddy issues",
-    "Mommy issues",
-    "The entire football team",
-    "Crippling student loan debt",
-    "A mental breakdown in the Target parking lot",
-    "Situationship trauma",
-    "Main character syndrome",
-    "Being too online",
-    "Roman Empire thoughts",
-    "The talking stage that never ends",
-    "Bare minimum behavior",
-    "A parasocial relationship",
-    "That one weird kid from high school",
-    "Weaponized incompetence",
-    "Your toxic trait",
-    "The ick",
-    "Delulu as the solulu",
-    "Ghosting someone mid-conversation",
-    "Stalking someone's Instagram from 2015",
-    "An 'accidental' double tap on a 3-year-old photo",
-    "Drunk crying at an Applebee's",
-    "Getting kicked out of an Uber",
-    "Throwing up in your own purse/backpack",
-    "A completely unhinged group project partner",
-    "Selling feet pics for textbooks",
-    "That weird rash that won't go away",
-    "Pretending to read the syllabus",
-    "Living off free campus event food",
-    "Three roommates and zero boundaries",
-];
+const cards = loadCards();
+const PROMPT_CARDS = cards.prompts;
+const RESPONSE_CARDS = cards.responses;
+
+console.log(`📦 Loaded ${PROMPT_CARDS.length} prompts and ${RESPONSE_CARDS.length} responses`);
 
 // ============ HELPER FUNCTIONS ============
 function generateRoomCode() {
-    const words = ['BEER', 'YEET', 'VIBE', 'SEND', 'BRUH', 'COPE', 'SLAY', 'YOLO', 'FLEX', 'MOOD'];
+    const words = ['BEER', 'YEET', 'VIBE', 'SEND', 'BRUH', 'COPE', 'SLAY', 'YOLO', 'FLEX', 'MOOD', 'DRIP', 'SICK', 'DANK', 'CHAD', 'SIMP'];
     if (Math.random() > 0.5) {
         return words[Math.floor(Math.random() * words.length)];
     }
@@ -100,7 +31,7 @@ function generateRoomCode() {
 }
 
 function getRandomEmoji() {
-    const emojis = ['🍺', '🎉', '💀', '🔥', '😈', '🤡', '👻', '🍕', '🌮', '🎯', '💩', '🦄', '🐸', '🍆', '🌶️'];
+    const emojis = ['🍺', '🎉', '💀', '🔥', '😈', '🤡', '👻', '🍕', '🌮', '🎯', '💩', '🦄', '🐸', '🍆', '🌶️', '🎪', '🚀', '👽', '🤠', '🧠'];
     return emojis[Math.floor(Math.random() * emojis.length)];
 }
 
@@ -122,6 +53,12 @@ function dealCards(room, player, count = 7) {
     }
 }
 
+function getMinPlayers(room) {
+    // Phone party mode: host plays too, so need 3 total (including host)
+    // TV mode: host doesn't play, need 3 players
+    return 3;
+}
+
 function startRound(roomCode) {
     const room = games[roomCode];
     if (!room) return;
@@ -129,6 +66,7 @@ function startRound(roomCode) {
     room.currentRound++;
     room.state = 'playing';
     room.submissions = {};
+    room.revealIndex = 0;
     
     // Rotate judge
     room.judgeIndex = (room.judgeIndex + 1) % room.players.length;
@@ -143,25 +81,47 @@ function startRound(roomCode) {
     // Deal cards to all players
     room.players.forEach(p => dealCards(room, p));
     
-    // Notify host
-    io.to(room.hostId).emit('round_start', {
-        round: room.currentRound,
-        maxRounds: room.maxRounds,
-        prompt: room.currentPrompt,
-        judgeName: judge.name,
-        judgeAvatar: judge.avatar
-    });
+    // In phone party mode, notify all players (including host who is a player)
+    // In TV mode, notify host separately
     
-    // Notify players
-    room.players.forEach(player => {
-        const isJudge = player.id === judge.id;
-        io.to(player.id).emit('your_turn', {
-            isJudge,
-            prompt: room.currentPrompt,
-            hand: isJudge ? [] : player.hand,
-            judgeName: judge.name
+    if (room.phonePartyMode) {
+        // Everyone gets notified as players
+        room.players.forEach(player => {
+            const isJudge = player.id === judge.id;
+            io.to(player.id).emit('round_start', {
+                round: room.currentRound,
+                maxRounds: room.maxRounds,
+                prompt: room.currentPrompt,
+                judgeName: judge.name,
+                judgeAvatar: judge.avatar,
+                isJudge,
+                hand: isJudge ? [] : player.hand,
+                playerCount: room.players.length,
+                phonePartyMode: true
+            });
         });
-    });
+    } else {
+        // TV mode - notify host separately
+        io.to(room.hostId).emit('round_start', {
+            round: room.currentRound,
+            maxRounds: room.maxRounds,
+            prompt: room.currentPrompt,
+            judgeName: judge.name,
+            judgeAvatar: judge.avatar,
+            phonePartyMode: false
+        });
+        
+        // Notify players
+        room.players.forEach(player => {
+            const isJudge = player.id === judge.id;
+            io.to(player.id).emit('your_turn', {
+                isJudge,
+                prompt: room.currentPrompt,
+                hand: isJudge ? [] : player.hand,
+                judgeName: judge.name
+            });
+        });
+    }
     
     console.log(`🎲 Round ${room.currentRound} started in ${roomCode} | Judge: ${judge.name}`);
 }
@@ -175,31 +135,88 @@ function checkAllSubmitted(roomCode) {
 function startReveal(roomCode) {
     const room = games[roomCode];
     room.state = 'reveal';
+    room.revealIndex = 0;
     
-    // Shuffle submissions so judge can't tell who submitted what
+    // Shuffle submissions
     const submissions = Object.entries(room.submissions).map(([playerId, card]) => ({
         playerId,
         card
     }));
     room.shuffledSubmissions = shuffle(submissions);
     
-    io.to(room.hostId).emit('start_reveal', {
-        prompt: room.currentPrompt,
-        submissionCount: room.shuffledSubmissions.length
-    });
+    if (room.phonePartyMode) {
+        // In phone party mode, everyone sees the reveal on their phones
+        room.players.forEach(player => {
+            const isJudge = room.players[room.judgeIndex].id === player.id;
+            io.to(player.id).emit('start_reveal', {
+                prompt: room.currentPrompt,
+                submissionCount: room.shuffledSubmissions.length,
+                isJudge,
+                phonePartyMode: true
+            });
+        });
+    } else {
+        // TV mode
+        io.to(room.hostId).emit('start_reveal', {
+            prompt: room.currentPrompt,
+            submissionCount: room.shuffledSubmissions.length
+        });
+        
+        const judge = room.players[room.judgeIndex];
+        io.to(judge.id).emit('judge_reveal', { prompt: room.currentPrompt });
+        
+        room.players.forEach(player => {
+            if (player.id !== judge.id) {
+                io.to(player.id).emit('watch_reveal');
+            }
+        });
+    }
+}
+
+function revealNextCard(roomCode, requesterId) {
+    const room = games[roomCode];
+    if (!room || room.state !== 'reveal') return;
     
-    // Tell judge to get ready to pick
-    const judge = room.players[room.judgeIndex];
-    io.to(judge.id).emit('judge_reveal', {
-        prompt: room.currentPrompt
-    });
+    // In phone party mode, only judge can reveal
+    // In TV mode, only host can reveal
+    const canReveal = room.phonePartyMode 
+        ? room.players[room.judgeIndex].id === requesterId
+        : room.hostId === requesterId;
     
-    // Tell other players to watch
-    room.players.forEach(player => {
-        if (player.id !== judge.id) {
-            io.to(player.id).emit('watch_reveal');
+    if (!canReveal) return;
+    
+    if (room.revealIndex < room.shuffledSubmissions.length) {
+        const submission = room.shuffledSubmissions[room.revealIndex];
+        const isLast = room.revealIndex === room.shuffledSubmissions.length - 1;
+        
+        if (room.phonePartyMode) {
+            // Send to all players
+            room.players.forEach(player => {
+                const isJudge = room.players[room.judgeIndex].id === player.id;
+                io.to(player.id).emit('card_revealed', {
+                    card: submission.card,
+                    index: room.revealIndex,
+                    isLast,
+                    isJudge
+                });
+            });
+        } else {
+            // TV mode
+            io.to(room.hostId).emit('card_revealed', {
+                card: submission.card,
+                index: room.revealIndex,
+                isLast
+            });
+            
+            const judge = room.players[room.judgeIndex];
+            io.to(judge.id).emit('card_revealed', {
+                card: submission.card,
+                index: room.revealIndex
+            });
         }
-    });
+        
+        room.revealIndex++;
+    }
 }
 
 function showWinner(roomCode, winningIndex) {
@@ -213,24 +230,41 @@ function showWinner(roomCode, winningIndex) {
     
     room.state = 'winner';
     
-    // Send to host
-    io.to(room.hostId).emit('round_winner', {
-        winnerName: winningPlayer ? winningPlayer.name : 'Unknown',
-        winnerAvatar: winningPlayer ? winningPlayer.avatar : '❓',
-        winningCard: winner.card,
-        prompt: room.currentPrompt,
-        scores: room.players.map(p => ({ name: p.name, avatar: p.avatar, score: p.score }))
-    });
+    const scores = room.players.map(p => ({ name: p.name, avatar: p.avatar, score: p.score }));
     
-    // Send to all players
-    room.players.forEach(player => {
-        io.to(player.id).emit('round_winner', {
+    if (room.phonePartyMode) {
+        // Send to all players
+        room.players.forEach(player => {
+            io.to(player.id).emit('round_winner', {
+                winnerName: winningPlayer ? winningPlayer.name : 'Unknown',
+                winnerAvatar: winningPlayer ? winningPlayer.avatar : '❓',
+                winningCard: winner.card,
+                prompt: room.currentPrompt,
+                scores,
+                isYou: player.id === winner.playerId,
+                phonePartyMode: true,
+                isHost: player.id === room.hostId
+            });
+        });
+    } else {
+        // TV mode
+        io.to(room.hostId).emit('round_winner', {
             winnerName: winningPlayer ? winningPlayer.name : 'Unknown',
             winnerAvatar: winningPlayer ? winningPlayer.avatar : '❓',
             winningCard: winner.card,
-            isYou: player.id === winner.playerId
+            prompt: room.currentPrompt,
+            scores
         });
-    });
+        
+        room.players.forEach(player => {
+            io.to(player.id).emit('round_winner', {
+                winnerName: winningPlayer ? winningPlayer.name : 'Unknown',
+                winnerAvatar: winningPlayer ? winningPlayer.avatar : '❓',
+                winningCard: winner.card,
+                isYou: player.id === winner.playerId
+            });
+        });
+    }
     
     console.log(`🏆 ${winningPlayer?.name} won round ${room.currentRound} in ${roomCode}`);
 }
@@ -241,24 +275,27 @@ function endGame(roomCode) {
     
     const sortedPlayers = [...room.players].sort((a, b) => b.score - a.score);
     
-    io.to(roomCode).emit('game_over', {
+    const gameOverData = {
         leaderboard: sortedPlayers.map(p => ({
             name: p.name,
             avatar: p.avatar,
             score: p.score
         })),
         winner: sortedPlayers[0]
-    });
+    };
     
-    io.to(room.hostId).emit('game_over', {
-        leaderboard: sortedPlayers.map(p => ({
-            name: p.name,
-            avatar: p.avatar,
-            score: p.score
-        })),
-        winner: sortedPlayers[0],
-        isHost: true
-    });
+    if (room.phonePartyMode) {
+        room.players.forEach(player => {
+            io.to(player.id).emit('game_over', {
+                ...gameOverData,
+                isHost: player.id === room.hostId,
+                phonePartyMode: true
+            });
+        });
+    } else {
+        io.to(roomCode).emit('game_over', gameOverData);
+        io.to(room.hostId).emit('game_over', { ...gameOverData, isHost: true });
+    }
     
     console.log(`🎮 Game ended in ${roomCode} | Winner: ${sortedPlayers[0]?.name}`);
 }
@@ -267,11 +304,14 @@ function endGame(roomCode) {
 io.on('connection', (socket) => {
     console.log('🎮 User connected:', socket.id);
 
-    socket.on('create_game', () => {
+    // Create game with mode selection
+    socket.on('create_game', (options = {}) => {
         let roomCode = generateRoomCode();
         while (games[roomCode]) {
             roomCode = generateRoomCode();
         }
+        
+        const phonePartyMode = options.phonePartyMode || false;
         
         games[roomCode] = {
             hostId: socket.id,
@@ -284,13 +324,34 @@ io.on('connection', (socket) => {
             responseDeck: shuffle([...RESPONSE_CARDS]),
             currentPrompt: null,
             submissions: {},
-            shuffledSubmissions: []
+            shuffledSubmissions: [],
+            phonePartyMode
         };
+        
         socket.join(roomCode);
         socket.roomCode = roomCode;
         socket.isHost = true;
-        socket.emit('game_created', roomCode);
-        console.log(`🏠 Game created: ${roomCode}`);
+        
+        // In phone party mode, host joins as a player too
+        if (phonePartyMode && options.hostName) {
+            const player = {
+                id: socket.id,
+                name: options.hostName,
+                score: 0,
+                avatar: getRandomEmoji(),
+                hand: []
+            };
+            games[roomCode].players.push(player);
+            socket.playerName = options.hostName;
+        }
+        
+        socket.emit('game_created', { 
+            roomCode, 
+            phonePartyMode,
+            hostName: options.hostName,
+            hostAvatar: games[roomCode].players[0]?.avatar
+        });
+        console.log(`🏠 Game created: ${roomCode} (${phonePartyMode ? 'Phone Party' : 'TV'} mode)`);
     });
 
     socket.on('join_game', (data) => {
@@ -323,11 +384,23 @@ io.on('connection', (socket) => {
             
             socket.emit('joined_success', { playerName, avatar: player.avatar });
             
-            io.to(room.hostId).emit('player_joined', { 
-                playerName, 
-                avatar: player.avatar,
-                playerCount: room.players.length 
-            });
+            // Notify host (and in phone party mode, all players)
+            if (room.phonePartyMode) {
+                room.players.forEach(p => {
+                    io.to(p.id).emit('player_joined', { 
+                        playerName, 
+                        avatar: player.avatar,
+                        playerCount: room.players.length,
+                        players: room.players.map(pl => ({ name: pl.name, avatar: pl.avatar }))
+                    });
+                });
+            } else {
+                io.to(room.hostId).emit('player_joined', { 
+                    playerName, 
+                    avatar: player.avatar,
+                    playerCount: room.players.length 
+                });
+            }
             
             console.log(`👤 ${playerName} joined room ${roomCode} (${room.players.length} players)`);
         } else {
@@ -335,19 +408,26 @@ io.on('connection', (socket) => {
         }
     });
 
-    // HOST: Start the game
     socket.on('start_game', () => {
         const room = games[socket.roomCode];
         if (room && socket.isHost && room.state === 'lobby') {
-            if (room.players.length < 3) {
-                socket.emit('error_msg', 'Need at least 3 players!');
+            const minPlayers = getMinPlayers(room);
+            if (room.players.length < minPlayers) {
+                socket.emit('error_msg', `Need at least ${minPlayers} players!`);
                 return;
             }
+            
+            // Notify all that game is starting
+            if (room.phonePartyMode) {
+                room.players.forEach(p => {
+                    io.to(p.id).emit('game_starting');
+                });
+            }
+            
             startRound(socket.roomCode);
         }
     });
 
-    // PLAYER: Submit a card
     socket.on('submit_card', (cardIndex) => {
         const room = games[socket.roomCode];
         if (!room || room.state !== 'playing') return;
@@ -355,7 +435,7 @@ io.on('connection', (socket) => {
         const player = room.players.find(p => p.id === socket.id);
         if (!player || room.players[room.judgeIndex].id === socket.id) return;
         
-        if (room.submissions[socket.id]) return; // Already submitted
+        if (room.submissions[socket.id]) return;
         
         const card = player.hand[cardIndex];
         if (!card) return;
@@ -365,50 +445,39 @@ io.on('connection', (socket) => {
         
         socket.emit('card_submitted');
         
-        // Tell host someone submitted
-        io.to(room.hostId).emit('player_submitted', {
-            playerName: player.name,
-            playerAvatar: player.avatar,
-            submittedCount: Object.keys(room.submissions).length,
-            totalPlayers: room.players.length - 1
-        });
+        // Notify about submission
+        const submittedCount = Object.keys(room.submissions).length;
+        const totalPlayers = room.players.length - 1;
+        
+        if (room.phonePartyMode) {
+            room.players.forEach(p => {
+                io.to(p.id).emit('player_submitted', {
+                    playerName: player.name,
+                    playerAvatar: player.avatar,
+                    submittedCount,
+                    totalPlayers
+                });
+            });
+        } else {
+            io.to(room.hostId).emit('player_submitted', {
+                playerName: player.name,
+                playerAvatar: player.avatar,
+                submittedCount,
+                totalPlayers
+            });
+        }
         
         console.log(`📝 ${player.name} submitted in ${socket.roomCode}`);
         
-        // Check if everyone submitted
         if (checkAllSubmitted(socket.roomCode)) {
-            startReveal(socket.roomCode);
+            setTimeout(() => startReveal(socket.roomCode), 1000);
         }
     });
 
-    // HOST: Reveal next card
     socket.on('reveal_next', () => {
-        const room = games[socket.roomCode];
-        if (!room || room.state !== 'reveal' || !socket.isHost) return;
-        
-        if (!room.revealIndex) room.revealIndex = 0;
-        
-        if (room.revealIndex < room.shuffledSubmissions.length) {
-            const submission = room.shuffledSubmissions[room.revealIndex];
-            
-            io.to(room.hostId).emit('card_revealed', {
-                card: submission.card,
-                index: room.revealIndex,
-                isLast: room.revealIndex === room.shuffledSubmissions.length - 1
-            });
-            
-            // Send to judge for selection
-            const judge = room.players[room.judgeIndex];
-            io.to(judge.id).emit('card_revealed', {
-                card: submission.card,
-                index: room.revealIndex
-            });
-            
-            room.revealIndex++;
-        }
+        revealNextCard(socket.roomCode, socket.id);
     });
 
-    // JUDGE: Pick winner
     socket.on('pick_winner', (cardIndex) => {
         const room = games[socket.roomCode];
         if (!room || room.state !== 'reveal') return;
@@ -416,14 +485,20 @@ io.on('connection', (socket) => {
         const judge = room.players[room.judgeIndex];
         if (socket.id !== judge.id) return;
         
-        room.revealIndex = 0;
         showWinner(socket.roomCode, cardIndex);
     });
 
-    // HOST: Next round
     socket.on('next_round', () => {
         const room = games[socket.roomCode];
-        if (!room || !socket.isHost) return;
+        if (!room) return;
+        
+        // In phone party mode, host (who is also a player) triggers next round
+        // In TV mode, host triggers
+        const canTrigger = room.phonePartyMode 
+            ? socket.id === room.hostId
+            : socket.isHost;
+        
+        if (!canTrigger) return;
         
         if (room.currentRound >= room.maxRounds) {
             endGame(socket.roomCode);
@@ -432,12 +507,10 @@ io.on('connection', (socket) => {
         }
     });
 
-    // HOST: Play again
     socket.on('play_again', () => {
         const room = games[socket.roomCode];
-        if (!room || !socket.isHost) return;
+        if (!room || socket.id !== room.hostId) return;
         
-        // Reset game state
         room.state = 'lobby';
         room.currentRound = 0;
         room.judgeIndex = -1;
@@ -450,10 +523,20 @@ io.on('connection', (socket) => {
             p.hand = [];
         });
         
-        io.to(socket.roomCode).emit('reset_to_lobby');
-        io.to(room.hostId).emit('back_to_lobby', {
-            players: room.players.map(p => ({ name: p.name, avatar: p.avatar }))
-        });
+        if (room.phonePartyMode) {
+            room.players.forEach(p => {
+                io.to(p.id).emit('back_to_lobby', {
+                    players: room.players.map(pl => ({ name: pl.name, avatar: pl.avatar })),
+                    phonePartyMode: true,
+                    isHost: p.id === room.hostId
+                });
+            });
+        } else {
+            io.to(socket.roomCode).emit('reset_to_lobby');
+            io.to(room.hostId).emit('back_to_lobby', {
+                players: room.players.map(p => ({ name: p.name, avatar: p.avatar }))
+            });
+        }
     });
 
     socket.on('disconnect', () => {
@@ -468,10 +551,20 @@ io.on('connection', (socket) => {
                 console.log(`💀 Game ${socket.roomCode} ended - host left`);
             } else {
                 room.players = room.players.filter(p => p.id !== socket.id);
-                io.to(room.hostId).emit('player_left', { 
-                    playerName: socket.playerName,
-                    playerCount: room.players.length
-                });
+                
+                if (room.phonePartyMode) {
+                    room.players.forEach(p => {
+                        io.to(p.id).emit('player_left', { 
+                            playerName: socket.playerName,
+                            playerCount: room.players.length
+                        });
+                    });
+                } else {
+                    io.to(room.hostId).emit('player_left', { 
+                        playerName: socket.playerName,
+                        playerCount: room.players.length
+                    });
+                }
             }
         }
     });
