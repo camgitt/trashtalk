@@ -1,0 +1,19 @@
+{
+  "name": "trash-talk-game",
+  "version": "1.0.0",
+  "description": "A party game for terrible people",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
+  }
+}

@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TRASH TALK</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;700;900&display=swap');
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            text-align: center; 
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+            color: white; 
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .screen {
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .hidden { display: none !important; }
+        
+        h1.logo {
+            font-family: 'Bangers', cursive;
+            font-size: clamp(3rem, 12vw, 6rem);
+            background: linear-gradient(180deg, #ff6b6b 0%, #ee5a5a 50%, #ff4757 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 4px 4px 0px rgba(0,0,0,0.3);
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .tagline { color: #888; font-size: 14px; margin-bottom: 40px; }
+        
+        button { 
+            padding: 18px 40px; 
+            font-size: 18px; 
+            font-weight: bold;
+            cursor: pointer; 
+            background: linear-gradient(180deg, #ff6b6b 0%, #ff4757 100%);
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            margin: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(255,71,87,0.4);
+        }
+        
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,71,87,0.5); }
+        button:active { transform: translateY(1px); }
+        button.secondary { background: linear-gradient(180deg, #576574 0%, #3d4852 100%); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        button.green { background: linear-gradient(180deg, #2ed573 0%, #26de81 100%); box-shadow: 0 4px 20px rgba(46,213,115,0.4); }
+        button:disabled { background: #444; box-shadow: none; cursor: not-allowed; opacity: 0.6; }
+        
+        input { 
+            padding: 16px 20px; 
+            font-size: 18px; 
+            margin: 8px;
+            border: 2px solid #333;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            width: 280px;
+            max-width: 90vw;
+        }
+        input:focus { outline: none; border-color: #ff4757; }
+        input::placeholder { color: #666; }
+        
+        #room-code-display { 
+            font-family: 'Bangers', cursive;
+            font-size: clamp(4rem, 20vw, 8rem);
+            letter-spacing: 12px; 
+            color: #2ed573;
+            text-shadow: 0 0 30px rgba(46,213,115,0.5);
+            margin: 20px 0;
+        }
+        
+        .players-container {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 30px;
+            min-width: 300px;
+            max-width: 600px;
+            width: 90%;
+        }
+        
+        .players-container h3 { color: #888; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
+        
+        .player-list { 
+            list-style: none; 
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .player-list li {
+            background: rgba(255,255,255,0.1);
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: popIn 0.3s ease;
+        }
+        
+        .player-list li.submitted { background: rgba(46, 213, 115, 0.3); border: 2px solid #2ed573; }
+        
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .player-count { color: #2ed573; font-size: 48px; font-weight: bold; }
+        
+        /* Cards */
+        .prompt-card {
+            background: linear-gradient(135deg, #2d2d44 0%, #1a1a2e 100%);
+            border: 3px solid #ff4757;
+            border-radius: 16px;
+            padding: 30px 40px;
+            font-size: clamp(1.2rem, 4vw, 2rem);
+            font-weight: bold;
+            max-width: 700px;
+            margin: 20px auto;
+            box-shadow: 0 10px 40px rgba(255,71,87,0.3);
+            animation: cardSlam 0.4s ease;
+        }
+        
+        @keyframes cardSlam {
+            0% { transform: scale(1.5) rotate(-5deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        
+        .response-card {
+            background: white;
+            color: #1a1a2e;
+            border-radius: 12px;
+            padding: 20px;
+            font-size: 16px;
+            font-weight: 600;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .response-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 8px 25px rgba(0,0,0,0.4); }
+        .response-card.selected { border: 4px solid #2ed573; transform: scale(1.05); }
+        
+        .hand-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        /* Reveal */
+        .revealed-card {
+            background: white;
+            color: #1a1a2e;
+            border-radius: 16px;
+            padding: 30px 40px;
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
+            font-weight: bold;
+            max-width: 600px;
+            margin: 20px auto;
+            animation: cardFlip 0.5s ease;
+            box-shadow: 0 10px 40px rgba(255,255,255,0.2);
+        }
+        
+        @keyframes cardFlip {
+            0% { transform: rotateY(90deg); opacity: 0; }
+            100% { transform: rotateY(0deg); opacity: 1; }
+        }
+        
+        .revealed-cards-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .mini-card {
+            background: white;
+            color: #1a1a2e;
+            border-radius: 10px;
+            padding: 15px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            max-width: 200px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .mini-card:hover { transform: scale(1.05); }
+        .mini-card.winner { border: 4px solid #ffd700; background: #fffde7; }
+        
+        /* Judge Badge */
+        .judge-badge {
+            background: linear-gradient(180deg, #ffd700 0%, #ffb700 100%);
+            color: #1a1a2e;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        /* Winner Screen */
+        .winner-card {
+            background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
+            color: #1a1a2e;
+            border-radius: 16px;
+            padding: 30px 40px;
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
+            font-weight: bold;
+            max-width: 600px;
+            margin: 20px auto;
+            box-shadow: 0 10px 40px rgba(255,215,0,0.4);
+            animation: winnerPop 0.5s ease;
+        }
+        
+        @keyframes winnerPop {
+            0% { transform: scale(0); }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .winner-name {
+            font-size: 48px;
+            margin: 20px 0;
+        }
+        
+        /* Leaderboard */
+        .leaderboard {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .leaderboard-item:last-child { border-bottom: none; }
+        .leaderboard-item.first { background: rgba(255,215,0,0.2); border-radius: 10px; }
+        
+        .score { font-size: 24px; font-weight: bold; color: #2ed573; }
+        
+        /* Status indicators */
+        .round-info { color: #888; font-size: 14px; margin-bottom: 20px; }
+        .pulse-dot { display: inline-block; width: 10px; height: 10px; background: #2ed573; border-radius: 50%; margin-left: 10px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.5); } }
+        
+        .waiting-emoji { font-size: 80px; margin-bottom: 20px; animation: bounce 1s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        
+        .error-msg { color: #ff4757; margin-top: 15px; font-weight: bold; }
+        
+        .confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
+    </style>
+</head>
+<body>
+
+    <!-- START SCREEN -->
+    <div id="start-screen" class="screen">
+        <h1 class="logo">TRASH TALK</h1>
+        <p class="tagline">A party game for terrible people</p>
+        <button onclick="hostGame()">🖥️ Host Game</button>
+        <button onclick="showJoinScreen()" class="secondary">📱 Join Game</button>
+    </div>
+
+    <!-- HOST LOBBY -->
+    <div id="host-screen" class="screen hidden">
+        <h2 style="color: #888; font-size: 16px; text-transform: uppercase; letter-spacing: 2px;">Join at</h2>
+        <p style="color:#2ed573; font-size: 18px; margin-bottom: 10px;" id="join-url"></p>
+        <div id="room-code-display">????</div>
+        
+        <div class="players-container">
+            <h3>Players Joined</h3>
+            <div class="player-count" id="player-count">0</div>
+            <ul id="players-list" class="player-list"></ul>
+        </div>
+        
+        <button id="start-btn" class="green" onclick="startGame()" disabled style="margin-top:30px; padding:20px 60px; font-size:24px;">
+            🚀 Start Game
+        </button>
+        <p style="color:#888; font-size:12px; margin-top:10px;">Need at least 3 players</p>
+    </div>
+
+    <!-- HOST GAME SCREEN -->
+    <div id="host-game-screen" class="screen hidden">
+        <div class="round-info">Round <span id="host-round">1</span> of <span id="host-max-rounds">10</span></div>
+        <div class="judge-badge">👑 Judge: <span id="host-judge-name">???</span></div>
+        
+        <div class="prompt-card" id="host-prompt">Loading...</div>
+        
+        <div class="players-container" style="margin-top: 30px;">
+            <h3>Waiting for answers... <span id="submit-count">0</span>/<span id="submit-total">0</span></h3>
+            <ul id="game-players-list" class="player-list"></ul>
+        </div>
+    </div>
+
+    <!-- HOST REVEAL SCREEN -->
+    <div id="host-reveal-screen" class="screen hidden">
+        <div class="round-info">Round <span id="reveal-round">1</span></div>
+        <div class="prompt-card" id="reveal-prompt" style="font-size: 1.2rem;">Loading...</div>
+        
+        <div class="revealed-cards-list" id="revealed-cards"></div>
+        
+        <button id="reveal-btn" class="green" onclick="revealNext()" style="margin-top: 20px;">
+            👆 Reveal Next Card
+        </button>
+        <p id="reveal-status" style="color:#888; margin-top:10px;"></p>
+    </div>
+
+    <!-- HOST WINNER SCREEN -->
+    <div id="host-winner-screen" class="screen hidden">
+        <h2 style="color: #ffd700; margin-bottom: 10px;">🏆 WINNER 🏆</h2>
+        <div class="winner-name" id="winner-display">🎉 Player</div>
+        
+        <div class="prompt-card" id="winner-prompt" style="font-size: 1rem; margin-bottom: 10px;">Prompt</div>
+        <div class="winner-card" id="winner-card">Winning answer</div>
+        
+        <div class="leaderboard" style="margin-top: 30px;">
+            <h3 style="color:#888; margin-bottom: 15px;">SCORES</h3>
+            <div id="scores-list"></div>
+        </div>
+        
+        <button class="green" onclick="nextRound()" style="margin-top: 30px;">
+            ➡️ Next Round
+        </button>
+    </div>
+
+    <!-- HOST GAME OVER -->
+    <div id="host-gameover-screen" class="screen hidden">
+        <h1 style="font-size: 64px; margin-bottom: 20px;">🏆</h1>
+        <h2 style="margin-bottom: 30px;">GAME OVER</h2>
+        
+        <div class="winner-name" id="final-winner">Winner!</div>
+        
+        <div class="leaderboard" style="margin-top: 30px;">
+            <h3 style="color:#888; margin-bottom: 15px;">FINAL SCORES</h3>
+            <div id="final-scores"></div>
+        </div>
+        
+        <button class="green" onclick="playAgain()" style="margin-top: 30px;">🔄 Play Again</button>
+    </div>
+
+    <!-- PLAYER JOIN SCREEN -->
+    <div id="join-screen" class="screen hidden">
+        <h1 class="logo" style="font-size: 3rem;">TRASH TALK</h1>
+        <h2 style="margin-bottom: 30px; color: #ccc;">Join the Game</h2>
+        <input type="text" id="p-name" placeholder="Your Name" maxlength="12" autocomplete="off"><br>
+        <input type="text" id="p-code" placeholder="Room Code" maxlength="4" style="text-transform:uppercase" autocomplete="off"><br>
+        <button onclick="joinGame()">🎮 Enter</button>
+        <p class="error-msg" id="error-msg"></p>
+        <button onclick="showStartScreen()" class="secondary" style="margin-top: 30px; padding: 10px 20px; font-size: 14px;">← Back</button>
+    </div>
+
+    <!-- PLAYER WAITING IN LOBBY -->
+    <div id="waiting-screen" class="screen hidden">
+        <div class="waiting-emoji" id="my-avatar">🎉</div>
+        <div style="font-size: 32px; font-weight: bold;" id="my-name-display"></div>
+        <p style="color:#888; font-size:18px; margin-top:20px;">
+            Waiting for host to start<span class="pulse-dot"></span>
+        </p>
+    </div>
+
+    <!-- PLAYER CARD SELECTION -->
+    <div id="player-game-screen" class="screen hidden">
+        <div class="judge-badge" id="player-judge-badge">👑 Judge: ???</div>
+        <div class="prompt-card" id="player-prompt" style="font-size: 1.1rem; padding: 20px;">Loading...</div>
+        
+        <p style="color:#888; margin: 20px 0;">Tap a card to play it</p>
+        
+        <div class="hand-container" id="player-hand"></div>
+    </div>
+
+    <!-- PLAYER WAITING (SUBMITTED) -->
+    <div id="player-submitted-screen" class="screen hidden">
+        <div style="font-size: 64px; margin-bottom: 20px;">✅</div>
+        <h2>Card Submitted!</h2>
+        <p style="color:#888; margin-top: 20px;">Waiting for other players<span class="pulse-dot"></span></p>
+    </div>
+
+    <!-- PLAYER IS JUDGE -->
+    <div id="player-judge-screen" class="screen hidden">
+        <div style="font-size: 64px; margin-bottom: 20px;">👑</div>
+        <h2>You're the Judge!</h2>
+        <div class="prompt-card" id="judge-prompt" style="font-size: 1rem; padding: 20px;">Loading...</div>
+        <p style="color:#888; margin-top: 20px;">Watch the TV and pick your favorite<span class="pulse-dot"></span></p>
+        
+        <div id="judge-cards-container" class="hidden" style="margin-top: 30px;">
+            <h3 style="margin-bottom: 15px;">Pick the Winner:</h3>
+            <div class="revealed-cards-list" id="judge-cards"></div>
+        </div>
+    </div>
+
+    <!-- PLAYER WATCH REVEAL -->
+    <div id="player-watch-screen" class="screen hidden">
+        <div style="font-size: 64px; margin-bottom: 20px;">📺</div>
+        <h2>Look at the TV!</h2>
+        <p style="color:#888; margin-top: 20px;">The judge is revealing answers<span class="pulse-dot"></span></p>
+    </div>
+
+    <!-- PLAYER ROUND WINNER -->
+    <div id="player-winner-screen" class="screen hidden">
+        <div style="font-size: 80px; margin-bottom: 20px;" id="player-win-emoji">🎉</div>
+        <h2 id="player-win-text">Winner!</h2>
+        <div class="winner-card" id="player-win-card" style="margin-top: 20px;">Winning card</div>
+        <p style="color:#888; margin-top: 30px;">Waiting for next round<span class="pulse-dot"></span></p>
+    </div>
+
+    <!-- PLAYER GAME OVER -->
+    <div id="player-gameover-screen" class="screen hidden">
+        <div style="font-size: 64px; margin-bottom: 20px;">🏆</div>
+        <h2>Game Over!</h2>
+        <p style="color:#888; margin-top: 20px;">Check the TV for final scores</p>
+    </div>
+
+    <!-- GAME ENDED (DISCONNECT) -->
+    <div id="ended-screen" class="screen hidden">
+        <h1 style="font-size: 48px; margin-bottom: 20px;">💀</h1>
+        <h2>Game Over</h2>
+        <p id="end-reason" style="color: #888; margin: 20px 0;"></p>
+        <button onclick="location.reload()">🔄 Play Again</button>
+    </div>
+
+    <canvas id="confetti" class="confetti hidden"></canvas>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let playerCount = 0;
+        let myHand = [];
+        let revealedCards = [];
+        let isHost = false;
+        
+        // ============ SCREEN NAVIGATION ============
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+        
+        function showStartScreen() { showScreen('start-screen'); }
+        function showJoinScreen() { 
+            showScreen('join-screen'); 
+            document.getElementById('p-name').focus(); 
+        }
+
+        // ============ HOST FUNCTIONS ============
+        function hostGame() {
+            isHost = true;
+            socket.emit('create_game');
+        }
+
+        function startGame() {
+            socket.emit('start_game');
+        }
+        
+        function revealNext() {
+            socket.emit('reveal_next');
+        }
+        
+        function nextRound() {
+            socket.emit('next_round');
+        }
+        
+        function playAgain() {
+            socket.emit('play_again');
+        }
+        
+        function updateStartButton() {
+            document.getElementById('start-btn').disabled = playerCount < 3;
+        }
+
+        // ============ PLAYER FUNCTIONS ============
+        function joinGame() {
+            const name = document.getElementById('p-name').value.trim();
+            const code = document.getElementById('p-code').value.toUpperCase().trim();
+            document.getElementById('error-msg').innerText = '';
+            
+            if (!name) { document.getElementById('error-msg').innerText = 'Enter your name!'; return; }
+            if (!code || code.length < 4) { document.getElementById('error-msg').innerText = 'Enter the 4-letter code!'; return; }
+            
+            socket.emit('join_game', { playerName: name, roomCode: code });
+        }
+        
+        function submitCard(index) {
+            socket.emit('submit_card', index);
+        }
+        
+        function pickWinner(index) {
+            socket.emit('pick_winner', index);
+        }
+        
+        function renderHand(hand) {
+            const container = document.getElementById('player-hand');
+            container.innerHTML = '';
+            hand.forEach((card, i) => {
+                const div = document.createElement('div');
+                div.className = 'response-card';
+                div.innerText = card;
+                div.onclick = () => submitCard(i);
+                container.appendChild(div);
+            });
+        }
+
+        // ============ SOCKET EVENTS - LOBBY ============
+        socket.on('game_created', (code) => {
+            showScreen('host-screen');
+            document.getElementById('room-code-display').innerText = code;
+            document.getElementById('join-url').innerText = window.location.origin;
+        });
+
+        socket.on('player_joined', (data) => {
+            playerCount = data.playerCount;
+            document.getElementById('player-count').innerText = playerCount;
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${data.avatar}</span> ${data.playerName}`;
+            li.id = `player-${data.playerName}`;
+            document.getElementById('players-list').appendChild(li);
+            updateStartButton();
+        });
+        
+        socket.on('player_left', (data) => {
+            playerCount = data.playerCount;
+            document.getElementById('player-count').innerText = playerCount;
+            updateStartButton();
+        });
+
+        socket.on('joined_success', (data) => {
+            showScreen('waiting-screen');
+            document.getElementById('my-name-display').innerText = data.playerName;
+            document.getElementById('my-avatar').innerText = data.avatar;
+        });
+
+        socket.on('error_msg', (msg) => {
+            document.getElementById('error-msg').innerText = msg;
+        });
+
+        // ============ SOCKET EVENTS - GAME ============
+        
+        // HOST: Round started
+        socket.on('round_start', (data) => {
+            showScreen('host-game-screen');
+            document.getElementById('host-round').innerText = data.round;
+            document.getElementById('host-max-rounds').innerText = data.maxRounds;
+            document.getElementById('host-prompt').innerText = data.prompt;
+            document.getElementById('host-judge-name').innerText = `${data.judgeAvatar} ${data.judgeName}`;
+            document.getElementById('submit-count').innerText = '0';
+            document.getElementById('submit-total').innerText = playerCount - 1;
+            
+            // Reset player list
+            const list = document.getElementById('game-players-list');
+            list.innerHTML = '';
+        });
+        
+        // HOST: Player submitted
+        socket.on('player_submitted', (data) => {
+            document.getElementById('submit-count').innerText = data.submittedCount;
+            
+            const li = document.createElement('li');
+            li.className = 'submitted';
+            li.innerHTML = `<span>${data.playerAvatar}</span> ${data.playerName} ✓`;
+            document.getElementById('game-players-list').appendChild(li);
+        });
+        
+        // HOST: Start reveal
+        socket.on('start_reveal', (data) => {
+            showScreen('host-reveal-screen');
+            document.getElementById('reveal-prompt').innerText = data.prompt;
+            document.getElementById('revealed-cards').innerHTML = '';
+            document.getElementById('reveal-status').innerText = `0 of ${data.submissionCount} revealed`;
+            document.getElementById('reveal-btn').classList.remove('hidden');
+            revealedCards = [];
+        });
+        
+        // HOST: Card revealed
+        socket.on('card_revealed', (data) => {
+            if (isHost) {
+                const div = document.createElement('div');
+                div.className = 'mini-card';
+                div.innerText = data.card;
+                div.dataset.index = data.index;
+                document.getElementById('revealed-cards').appendChild(div);
+                
+                document.getElementById('reveal-status').innerText = data.isLast ? 
+                    'All cards revealed! Judge is picking...' : 
+                    `${data.index + 1} revealed`;
+                
+                if (data.isLast) {
+                    document.getElementById('reveal-btn').classList.add('hidden');
+                }
+            } else {
+                // Judge sees cards for picking
+                revealedCards.push({ card: data.card, index: data.index });
+                renderJudgeCards();
+            }
+        });
+        
+        function renderJudgeCards() {
+            const container = document.getElementById('judge-cards');
+            container.innerHTML = '';
+            document.getElementById('judge-cards-container').classList.remove('hidden');
+            
+            revealedCards.forEach((c) => {
+                const div = document.createElement('div');
+                div.className = 'mini-card';
+                div.innerText = c.card;
+                div.onclick = () => pickWinner(c.index);
+                container.appendChild(div);
+            });
+        }
+        
+        // HOST: Round winner
+        socket.on('round_winner', (data) => {
+            if (isHost) {
+                showScreen('host-winner-screen');
+                document.getElementById('winner-display').innerText = `${data.winnerAvatar} ${data.winnerName}`;
+                document.getElementById('winner-prompt').innerText = data.prompt;
+                document.getElementById('winner-card').innerText = data.winningCard;
+                
+                // Render scores
+                const scoresList = document.getElementById('scores-list');
+                scoresList.innerHTML = '';
+                data.scores.sort((a, b) => b.score - a.score).forEach((p, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'leaderboard-item' + (i === 0 ? ' first' : '');
+                    div.innerHTML = `<span>${p.avatar} ${p.name}</span><span class="score">${p.score}</span>`;
+                    scoresList.appendChild(div);
+                });
+                
+                triggerConfetti();
+            } else {
+                showScreen('player-winner-screen');
+                if (data.isYou) {
+                    document.getElementById('player-win-emoji').innerText = '🎉';
+                    document.getElementById('player-win-text').innerText = 'YOU WON!';
+                } else {
+                    document.getElementById('player-win-emoji').innerText = '👏';
+                    document.getElementById('player-win-text').innerText = `${data.winnerAvatar} ${data.winnerName} won!`;
+                }
+                document.getElementById('player-win-card').innerText = data.winningCard;
+            }
+        });
+        
+        // PLAYER: Your turn
+        socket.on('your_turn', (data) => {
+            revealedCards = [];
+            if (data.isJudge) {
+                showScreen('player-judge-screen');
+                document.getElementById('judge-prompt').innerText = data.prompt;
+                document.getElementById('judge-cards-container').classList.add('hidden');
+                document.getElementById('judge-cards').innerHTML = '';
+            } else {
+                showScreen('player-game-screen');
+                document.getElementById('player-prompt').innerText = data.prompt;
+                document.getElementById('player-judge-badge').innerText = `👑 Judge: ${data.judgeName}`;
+                myHand = data.hand;
+                renderHand(myHand);
+            }
+        });
+        
+        // PLAYER: Card submitted
+        socket.on('card_submitted', () => {
+            showScreen('player-submitted-screen');
+        });
+        
+        // PLAYER: Judge reveal mode
+        socket.on('judge_reveal', (data) => {
+            showScreen('player-judge-screen');
+            document.getElementById('judge-prompt').innerText = data.prompt;
+        });
+        
+        // PLAYER: Watch reveal
+        socket.on('watch_reveal', () => {
+            showScreen('player-watch-screen');
+        });
+        
+        // GAME OVER
+        socket.on('game_over', (data) => {
+            if (data.isHost) {
+                showScreen('host-gameover-screen');
+                document.getElementById('final-winner').innerText = `${data.winner.avatar} ${data.winner.name}`;
+                
+                const scoresList = document.getElementById('final-scores');
+                scoresList.innerHTML = '';
+                data.leaderboard.forEach((p, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'leaderboard-item' + (i === 0 ? ' first' : '');
+                    div.innerHTML = `<span>${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : ''} ${p.avatar} ${p.name}</span><span class="score">${p.score}</span>`;
+                    scoresList.appendChild(div);
+                });
+                
+                triggerConfetti();
+            } else {
+                showScreen('player-gameover-screen');
+            }
+        });
+        
+        // RESET
+        socket.on('reset_to_lobby', () => {
+            showScreen('waiting-screen');
+        });
+        
+        socket.on('back_to_lobby', (data) => {
+            showScreen('host-screen');
+            const list = document.getElementById('players-list');
+            list.innerHTML = '';
+            data.players.forEach(p => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${p.avatar}</span> ${p.name}`;
+                list.appendChild(li);
+            });
+            playerCount = data.players.length;
+            document.getElementById('player-count').innerText = playerCount;
+            updateStartButton();
+        });
+        
+        // DISCONNECTION
+        socket.on('game_ended', (reason) => {
+            document.getElementById('end-reason').innerText = reason;
+            showScreen('ended-screen');
+        });
+        
+        // ============ CONFETTI ============
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti');
+            canvas.classList.remove('hidden');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const particles = [];
+            const colors = ['#ff4757', '#2ed573', '#ffd700', '#ff6b6b', '#5352ed', '#1e90ff'];
+            
+            for (let i = 0; i < 150; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    r: Math.random() * 6 + 4,
+                    d: Math.random() * 150 + 100,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    tilt: Math.random() * 10 - 5
+                });
+            }
+            
+            let frame = 0;
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    ctx.beginPath();
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(p.x, p.y, p.r, p.r * 1.5);
+                    p.y += 3;
+                    p.x += p.tilt * 0.1;
+                });
+                
+                frame++;
+                if (frame < 180) {
+                    requestAnimationFrame(draw);
+                } else {
+                    canvas.classList.add('hidden');
+                }
+            }
+            draw();
+        }
+        
+        // ============ KEYBOARD SUPPORT ============
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !document.getElementById('join-screen').classList.contains('hidden')) {
+                joinGame();
+            }
+        });
+    </script>
+</body>
+</html>
