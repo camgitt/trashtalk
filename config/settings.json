@@ -1,0 +1,9 @@
+{
+  "minPlayers": 3,
+  "maxPlayers": 12,
+  "handSize": 7,
+  "extraCardsPerCombo": 2,
+  "revealDelay": 1000,
+  "defaultPacks": ["college", "spicy", "family", "tame"],
+  "roomCodeWords": ["BEER", "YEET", "VIBE", "SEND", "BRUH", "COPE", "SLAY", "YOLO", "FLEX", "MOOD", "DRIP", "SICK", "DANK", "CHAD", "SIMP", "FIRE", "WOKE", "GOAT", "FOMO", "YASS"]
+}
