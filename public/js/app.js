@@ -148,6 +148,55 @@ function leaveGame() {
     }
 }
 
+// ============ QR CODE & SHARING ============
+let currentRoomCode = '';
+
+function generateQRCode(roomCode, qrElementId) {
+    currentRoomCode = roomCode;
+    const joinUrl = `${window.location.origin}?code=${roomCode}`;
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(joinUrl)}`;
+    document.getElementById(qrElementId).src = qrApiUrl;
+}
+
+async function shareGame(mode) {
+    const roomCode = mode === 'phone'
+        ? document.getElementById('phone-room-code').innerText
+        : document.getElementById('room-code-display').innerText;
+    const joinUrl = `${window.location.origin}?code=${roomCode}`;
+    const shareText = `Join my TRASH TALK game! Code: ${roomCode}`;
+
+    // Try native share first (mobile)
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'TRASH TALK',
+                text: shareText,
+                url: joinUrl
+            });
+            playSound('click');
+            return;
+        } catch (err) {
+            // User cancelled or share failed, fallback to clipboard
+        }
+    }
+
+    // Fallback: copy to clipboard
+    try {
+        await navigator.clipboard.writeText(joinUrl);
+        playSound('click');
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = '✅ Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.classList.remove('copied');
+        }, 2000);
+    } catch (err) {
+        alert(`Share this link: ${joinUrl}`);
+    }
+}
+
 function updateStartButton(count, btnId) {
     const btn = document.getElementById(btnId);
     if (btn) btn.disabled = count < 3;
@@ -274,6 +323,7 @@ socket.on('game_created', (data) => {
         document.getElementById('phone-join-url').innerText = window.location.origin;
         document.getElementById('phone-packs-display').innerText = data.packs;
         document.getElementById('phone-players-list').innerHTML = `<li><span>${data.hostAvatar}</span> ${data.hostName} (you)</li>`;
+        generateQRCode(data.roomCode, 'phone-qr-code');
         playerCount = 1;
         updateStartButton(playerCount, 'phone-start-btn');
     } else {
@@ -281,6 +331,7 @@ socket.on('game_created', (data) => {
         document.getElementById('room-code-display').innerText = data.roomCode;
         document.getElementById('join-url').innerText = window.location.origin;
         document.getElementById('host-packs-display').innerText = data.packs;
+        generateQRCode(data.roomCode, 'host-qr-code');
     }
 });
 
@@ -605,3 +656,16 @@ document.addEventListener('keydown', (e) => {
         if (!document.getElementById('phone-party-setup').classList.contains('hidden')) hostPhoneParty();
     }
 });
+
+// ============ AUTO-JOIN FROM URL ============
+(function checkUrlCode() {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+        showJoinScreen();
+        document.getElementById('p-code').value = code.toUpperCase();
+        document.getElementById('p-name').focus();
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+})();

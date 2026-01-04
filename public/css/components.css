@@ -161,6 +161,44 @@
     color: #ff4757;
 }
 
+/* ============ QR CODE & SHARE ============ */
+.qr-share-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.qr-code {
+    width: 140px;
+    height: 140px;
+    border-radius: 10px;
+    background: white;
+    padding: 8px;
+}
+
+.share-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.share-btn:hover {
+    background: rgba(46,213,115,0.2);
+    border-color: #2ed573;
+}
+
+.share-btn.copied {
+    background: rgba(46,213,115,0.3);
+    border-color: #2ed573;
+}
+
 /* ============ VERSION BADGE ============ */
 .version-badge {
     position: fixed;

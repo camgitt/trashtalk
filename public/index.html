@@ -83,8 +83,14 @@
         <p style="color: #888; font-size: 13px;">Join at</p>
         <p class="url-display" id="join-url"></p>
         <div class="room-code" id="room-code-display">????</div>
+
+        <div class="qr-share-section">
+            <img id="host-qr-code" class="qr-code" alt="QR Code">
+            <button class="share-btn" onclick="shareGame('host')">📤 Share Link</button>
+        </div>
+
         <div class="pack-display" id="host-packs-display">🎓 🌶️ 👨‍👩‍👧 😂</div>
-        
+
         <div class="players-container">
             <h3>Players</h3>
             <div class="player-count" id="player-count">0</div>
@@ -102,8 +108,14 @@
         <p style="color: #888; font-size: 13px;">Share this code</p>
         <p class="url-display" id="phone-join-url"></p>
         <div class="room-code" id="phone-room-code">????</div>
+
+        <div class="qr-share-section">
+            <img id="phone-qr-code" class="qr-code" alt="QR Code">
+            <button class="share-btn" onclick="shareGame('phone')">📤 Share Link</button>
+        </div>
+
         <div class="pack-display" id="phone-packs-display">🎓 🌶️ 👨‍👩‍👧 😂</div>
-        
+
         <div class="players-container">
             <h3>Players</h3>
             <ul id="phone-players-list" class="player-list"></ul>
