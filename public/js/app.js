@@ -131,7 +131,7 @@ function joinGame() {
 
 function toggleCardSelection(index) {
     playSound('select');
-    
+
     const existingIndex = selectedCards.indexOf(index);
     if (existingIndex > -1) {
         selectedCards.splice(existingIndex, 1);
@@ -141,9 +141,25 @@ function toggleCardSelection(index) {
         selectedCards.shift();
         selectedCards.push(index);
     }
-    
-    renderHand(currentHand);
+
+    updateCardSelectionUI();
     updateSelectionInfo();
+}
+
+function updateCardSelectionUI() {
+    const container = document.getElementById('game-hand');
+    const cards = container.querySelectorAll('.response-card');
+
+    cards.forEach((card, i) => {
+        const selectionOrder = selectedCards.indexOf(i);
+        if (selectionOrder > -1) {
+            card.classList.add('selected');
+            card.setAttribute('data-order', selectionOrder + 1);
+        } else {
+            card.classList.remove('selected');
+            card.removeAttribute('data-order');
+        }
+    });
 }
 
 function updateSelectionInfo() {
