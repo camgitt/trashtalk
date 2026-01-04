@@ -145,6 +145,22 @@
 .winner-name { font-size: 26px; margin: 12px 0; }
 .points-won { font-size: 20px; color: #2ed573; margin: 10px 0; }
 
+/* ============ LEAVE BUTTON ============ */
+.leave-btn {
+    margin-top: 30px;
+    padding: 8px 16px;
+    font-size: 12px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.5);
+}
+
+.leave-btn:hover {
+    background: rgba(255,71,87,0.2);
+    border-color: #ff4757;
+    color: #ff4757;
+}
+
 /* ============ VERSION BADGE ============ */
 .version-badge {
     position: fixed;

@@ -111,6 +111,13 @@ function revealNext() { playSound('reveal'); socket.emit('reveal_next'); }
 function nextRound() { playSound('click'); socket.emit('next_round'); }
 function playAgain() { playSound('click'); socket.emit('play_again'); }
 
+function leaveGame() {
+    if (confirm('Leave this game?')) {
+        socket.emit('leave_game');
+        location.reload();
+    }
+}
+
 function updateStartButton(count, btnId) {
     const btn = document.getElementById(btnId);
     if (btn) btn.disabled = count < 3;

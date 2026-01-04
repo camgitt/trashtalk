@@ -28,6 +28,47 @@ app.get('/api/packs', (req, res) => {
 
 const games = {};
 
+// ============ INPUT VALIDATION ============
+function sanitizeName(name) {
+    if (typeof name !== 'string') return '';
+    return name
+        .trim()
+        .slice(0, 12)
+        .replace(/[<>]/g, '');  // Strip HTML brackets
+}
+
+function isValidRoomCode(code) {
+    return typeof code === 'string' && /^[A-Z0-9]{4,8}$/i.test(code);
+}
+
+// ============ RATE LIMITING ============
+const rateLimits = new Map();
+const RATE_LIMIT_WINDOW = 1000;  // 1 second
+const RATE_LIMIT_MAX = 10;       // max 10 events per second
+
+function isRateLimited(socketId) {
+    const now = Date.now();
+    const entry = rateLimits.get(socketId) || { count: 0, resetAt: now + RATE_LIMIT_WINDOW };
+
+    if (now > entry.resetAt) {
+        entry.count = 1;
+        entry.resetAt = now + RATE_LIMIT_WINDOW;
+    } else {
+        entry.count++;
+    }
+
+    rateLimits.set(socketId, entry);
+    return entry.count > RATE_LIMIT_MAX;
+}
+
+// Cleanup old rate limit entries every minute
+setInterval(() => {
+    const now = Date.now();
+    for (const [id, entry] of rateLimits) {
+        if (now > entry.resetAt + 60000) rateLimits.delete(id);
+    }
+}, 60000);
+
 // ============ HELPER FUNCTIONS ============
 function generateRoomCode() {
     if (Math.random() > 0.5 && settings.roomCodeWords.length > 0) {
@@ -317,7 +358,16 @@ function endGame(roomCode) {
 io.on('connection', (socket) => {
     console.log('🎮 User connected:', socket.id);
 
-    socket.on('create_game', (options = {}) => {
+    // Rate limit wrapper for socket events
+    const rateLimitedHandler = (handler) => (...args) => {
+        if (isRateLimited(socket.id)) {
+            socket.emit('error_msg', 'Slow down! Too many requests.');
+            return;
+        }
+        handler(...args);
+    };
+
+    socket.on('create_game', rateLimitedHandler((options = {}) => {
         let roomCode = generateRoomCode();
         while (games[roomCode]) roomCode = generateRoomCode();
         
@@ -347,9 +397,15 @@ io.on('connection', (socket) => {
         socket.isHost = true;
         
         if (phonePartyMode && options.hostName) {
-            const player = { id: socket.id, name: options.hostName, score: 0, avatar: getRandomEmoji(), hand: [] };
+            const hostName = sanitizeName(options.hostName);
+            if (!hostName) {
+                socket.emit('error_msg', 'Enter a valid name!');
+                delete games[roomCode];
+                return;
+            }
+            const player = { id: socket.id, name: hostName, score: 0, avatar: getRandomEmoji(), hand: [] };
             games[roomCode].players.push(player);
-            socket.playerName = options.hostName;
+            socket.playerName = hostName;
         }
         
         // Get pack info for display
@@ -365,10 +421,22 @@ io.on('connection', (socket) => {
         });
         
         console.log(`🏠 Game created: ${roomCode} | Packs: ${selectedPacks.join(', ')}`);
-    });
+    }));
 
-    socket.on('join_game', (data) => {
-        const { roomCode, playerName } = data;
+    socket.on('join_game', rateLimitedHandler((data) => {
+        const roomCode = (data.roomCode || '').toUpperCase().trim();
+        const playerName = sanitizeName(data.playerName);
+
+        if (!playerName) {
+            socket.emit('error_msg', 'Enter a valid name!');
+            return;
+        }
+
+        if (!isValidRoomCode(roomCode)) {
+            socket.emit('error_msg', 'Invalid room code!');
+            return;
+        }
+
         const room = games[roomCode];
 
         if (room) {
@@ -416,9 +484,9 @@ io.on('connection', (socket) => {
         } else {
             socket.emit('error_msg', 'Room not found! Check the code.');
         }
-    });
+    }));
 
-    socket.on('start_game', () => {
+    socket.on('start_game', rateLimitedHandler(() => {
         const room = games[socket.roomCode];
         if (room && socket.isHost && room.state === 'lobby') {
             if (room.players.length < settings.minPlayers) {
@@ -432,9 +500,9 @@ io.on('connection', (socket) => {
             
             startRound(socket.roomCode);
         }
-    });
+    }));
 
-    socket.on('submit_cards', (cardIndices) => {
+    socket.on('submit_cards', rateLimitedHandler((cardIndices) => {
         const room = games[socket.roomCode];
         if (!room || room.state !== 'playing') return;
         
@@ -479,38 +547,67 @@ io.on('connection', (socket) => {
         if (checkAllSubmitted(socket.roomCode)) {
             setTimeout(() => startReveal(socket.roomCode), settings.revealDelay);
         }
-    });
+    }));
 
-    socket.on('reveal_next', () => revealNextCard(socket.roomCode, socket.id));
+    socket.on('reveal_next', rateLimitedHandler(() => revealNextCard(socket.roomCode, socket.id)));
 
-    socket.on('pick_winner', (cardIndex) => {
+    socket.on('pick_winner', rateLimitedHandler((cardIndex) => {
         const room = games[socket.roomCode];
         if (!room || room.state !== 'reveal') return;
-        
+
         const judge = room.players[room.judgeIndex];
         if (socket.id !== judge.id) return;
-        
-        showWinner(socket.roomCode, cardIndex);
-    });
 
-    socket.on('next_round', () => {
+        showWinner(socket.roomCode, cardIndex);
+    }));
+
+    socket.on('next_round', rateLimitedHandler(() => {
         const room = games[socket.roomCode];
         if (!room) return;
-        
+
         const canTrigger = room.phonePartyMode ? socket.id === room.hostId : socket.isHost;
         if (!canTrigger) return;
-        
+
         if (room.currentRound >= roundsConfig.totalRounds) {
             endGame(socket.roomCode);
         } else {
             startRound(socket.roomCode);
         }
-    });
+    }));
 
-    socket.on('play_again', () => {
+    socket.on('leave_game', rateLimitedHandler(() => {
+        const room = games[socket.roomCode];
+        if (!room) return;
+
+        // Host leaving ends the game
+        if (socket.isHost) {
+            io.to(socket.roomCode).emit('game_ended', 'Host left the game');
+            delete games[socket.roomCode];
+            console.log(`💀 Game ${socket.roomCode} ended - host left`);
+        } else {
+            // Remove player from room
+            room.players = room.players.filter(p => p.id !== socket.id);
+            delete room.submissions[socket.id];
+
+            if (room.phonePartyMode) {
+                room.players.forEach(p => {
+                    io.to(p.id).emit('player_left', { playerName: socket.playerName, playerCount: room.players.length });
+                });
+            } else {
+                io.to(room.hostId).emit('player_left', { playerName: socket.playerName, playerCount: room.players.length });
+            }
+
+            console.log(`👋 ${socket.playerName} left ${socket.roomCode}`);
+        }
+
+        socket.leave(socket.roomCode);
+        socket.roomCode = null;
+    }));
+
+    socket.on('play_again', rateLimitedHandler(() => {
         const room = games[socket.roomCode];
         if (!room || socket.id !== room.hostId) return;
-        
+
         const decks = buildDecks(room.selectedPacks);
         room.state = 'lobby';
         room.currentRound = 0;
@@ -521,7 +618,7 @@ io.on('connection', (socket) => {
         room.submissions = {};
         room.shuffledSubmissions = [];
         room.players.forEach(p => { p.score = 0; p.hand = []; });
-        
+
         if (room.phonePartyMode) {
             room.players.forEach(p => {
                 io.to(p.id).emit('back_to_lobby', {
@@ -536,7 +633,7 @@ io.on('connection', (socket) => {
                 players: room.players.map(p => ({ name: p.name, avatar: p.avatar }))
             });
         }
-    });
+    }));
 
     socket.on('disconnect', () => {
         console.log('👋 User disconnected:', socket.id);
