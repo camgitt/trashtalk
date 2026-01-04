@@ -43,11 +43,42 @@ function playSound(type) {
             oscillator.stop(audioCtx.currentTime + 0.15);
             break;
         case 'reveal':
-            oscillator.type = 'triangle';
-            oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(500, audioCtx.currentTime + 0.15);
-            gainNode.gain.setValueAtTime(0.25, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            // Soft card flip sound using filtered noise
+            const bufferSize = audioCtx.sampleRate * 0.08; // 80ms
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = noiseBuffer;
+
+            // Bandpass filter for papery sound
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(2000, audioCtx.currentTime);
+            filter.Q.setValueAtTime(0.5, audioCtx.currentTime);
+
+            const noiseGain = audioCtx.createGain();
+            noiseGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+
+            noise.connect(filter);
+            filter.connect(noiseGain);
+            noiseGain.connect(audioCtx.destination);
+            noise.start();
+            noise.stop(audioCtx.currentTime + 0.08);
+
+            // Don't use the oscillator for this sound
+            oscillator.disconnect();
+            break;
+        case 'roundStart':
+            // Soft subtle chime for new round
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(660, audioCtx.currentTime + 0.15);
+            gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
             oscillator.start();
             oscillator.stop(audioCtx.currentTime + 0.2);
             break;
