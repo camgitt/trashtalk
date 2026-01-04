@@ -6,9 +6,15 @@ const path = require('path');
 const fs = require('fs');
 
 // ============ LOAD CONFIG FILES ============
-const cardsData = JSON.parse(fs.readFileSync(path.join(__dirname, 'config/cards.json'), 'utf8'));
-const settings = JSON.parse(fs.readFileSync(path.join(__dirname, 'config/settings.json'), 'utf8'));
-const roundsConfig = JSON.parse(fs.readFileSync(path.join(__dirname, 'config/rounds.json'), 'utf8'));
+let cardsData, settings, roundsConfig;
+try {
+    cardsData = JSON.parse(fs.readFileSync(path.join(__dirname, 'config/cards.json'), 'utf8'));
+    settings = JSON.parse(fs.readFileSync(path.join(__dirname, 'config/settings.json'), 'utf8'));
+    roundsConfig = JSON.parse(fs.readFileSync(path.join(__dirname, 'config/rounds.json'), 'utf8'));
+} catch (err) {
+    console.error('❌ Failed to load config files:', err.message);
+    process.exit(1);
+}
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -273,20 +279,31 @@ function getPromptForRound(room, cardsNeeded) {
     return prompt;
 }
 
+// Safely get judge, correcting index if players left
+function getJudge(room) {
+    if (!room || room.players.length === 0) return null;
+    if (room.judgeIndex < 0 || room.judgeIndex >= room.players.length) {
+        room.judgeIndex = 0;
+    }
+    return room.players[room.judgeIndex];
+}
+
 function startRound(roomCode) {
     const room = games[roomCode];
-    if (!room) return;
-    
+    if (!room || room.players.length < 2) return;
+
     room.currentRound++;
     room.state = 'playing';
     room.submissions = {};
     room.revealIndex = 0;
-    
+
     const roundConfig = getRoundConfig(room.currentRound);
     room.currentRoundConfig = roundConfig;
-    
+
+    // Safely advance judge index (handle case where players left)
     room.judgeIndex = (room.judgeIndex + 1) % room.players.length;
-    const judge = room.players[room.judgeIndex];
+    const judge = getJudge(room);
+    if (!judge) return;
     
     room.currentPrompt = getPromptForRound(room, roundConfig.cardsNeeded);
     
@@ -355,14 +372,16 @@ function startReveal(roomCode) {
         pointValue: room.currentRoundConfig.points
     };
     
+    const judge = getJudge(room);
+    if (!judge) return;
+
     if (room.phonePartyMode) {
         room.players.forEach(player => {
-            const isJudge = room.players[room.judgeIndex].id === player.id;
+            const isJudge = player.id === judge.id;
             io.to(player.id).emit('start_reveal', { ...revealData, isJudge, phonePartyMode: true });
         });
     } else {
         io.to(room.hostId).emit('start_reveal', revealData);
-        const judge = room.players[room.judgeIndex];
         io.to(judge.id).emit('judge_reveal', { prompt: room.currentPrompt });
         room.players.forEach(player => {
             if (player.id !== judge.id) io.to(player.id).emit('watch_reveal');
@@ -373,30 +392,32 @@ function startReveal(roomCode) {
 function revealNextCard(roomCode, requesterId) {
     const room = games[roomCode];
     if (!room || room.state !== 'reveal') return;
-    
-    const canReveal = room.phonePartyMode 
-        ? room.players[room.judgeIndex].id === requesterId
+
+    const judge = getJudge(room);
+    if (!judge) return;
+
+    const canReveal = room.phonePartyMode
+        ? judge.id === requesterId
         : room.hostId === requesterId;
-    
+
     if (!canReveal) return;
-    
+
     if (room.revealIndex < room.shuffledSubmissions.length) {
         const submission = room.shuffledSubmissions[room.revealIndex];
         const isLast = room.revealIndex === room.shuffledSubmissions.length - 1;
-        
+
         const revealData = { cards: submission.cards, index: room.revealIndex, isLast };
-        
+
         if (room.phonePartyMode) {
             room.players.forEach(player => {
-                const isJudge = room.players[room.judgeIndex].id === player.id;
+                const isJudge = player.id === judge.id;
                 io.to(player.id).emit('card_revealed', { ...revealData, isJudge });
             });
         } else {
             io.to(room.hostId).emit('card_revealed', revealData);
-            const judge = room.players[room.judgeIndex];
             io.to(judge.id).emit('card_revealed', { ...revealData, isJudge: true });
         }
-        
+
         room.revealIndex++;
     }
 }
@@ -621,9 +642,10 @@ io.on('connection', (socket) => {
     socket.on('submit_cards', rateLimitedHandler((cardIndices) => {
         const room = games[socket.roomCode];
         if (!room || room.state !== 'playing') return;
-        
+
+        const judge = getJudge(room);
         const player = room.players.find(p => p.id === socket.id);
-        if (!player || room.players[room.judgeIndex].id === socket.id) return;
+        if (!player || (judge && judge.id === socket.id)) return;
         if (room.submissions[socket.id]) return;
         
         const indices = Array.isArray(cardIndices) ? cardIndices : [cardIndices];
@@ -667,8 +689,8 @@ io.on('connection', (socket) => {
         const room = games[socket.roomCode];
         if (!room || room.state !== 'reveal') return;
 
-        const judge = room.players[room.judgeIndex];
-        if (socket.id !== judge.id) return;
+        const judge = getJudge(room);
+        if (!judge || socket.id !== judge.id) return;
 
         updateGameActivity(socket.roomCode);
         showWinner(socket.roomCode, cardIndex);
