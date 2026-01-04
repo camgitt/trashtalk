@@ -1,5 +1,12 @@
 // ============ GAME STATE ============
 const socket = io();
+
+// ============ SECURITY HELPERS ============
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 let playerCount = 0;
 let isHost = false;
 let isJudge = false;
@@ -305,7 +312,7 @@ function renderPlayers(players, listId) {
     players.forEach((p, i) => {
         const li = document.createElement('li');
         const isYou = (phonePartyMode && isHost && i === 0) ? ' (you)' : '';
-        li.innerHTML = `<span>${p.avatar}</span> ${p.name}${isYou}`;
+        li.innerHTML = `<span>${escapeHtml(p.avatar)}</span> ${escapeHtml(p.name)}${isYou}`;
         list.appendChild(li);
     });
 }
@@ -322,7 +329,7 @@ socket.on('game_created', (data) => {
         document.getElementById('phone-room-code').innerText = data.roomCode;
         document.getElementById('phone-join-url').innerText = window.location.origin;
         document.getElementById('phone-packs-display').innerText = data.packs;
-        document.getElementById('phone-players-list').innerHTML = `<li><span>${data.hostAvatar}</span> ${data.hostName} (you)</li>`;
+        document.getElementById('phone-players-list').innerHTML = `<li><span>${escapeHtml(data.hostAvatar)}</span> ${escapeHtml(data.hostName)} (you)</li>`;
         generateQRCode(data.roomCode, 'phone-qr-code');
         playerCount = 1;
         updateStartButton(playerCount, 'phone-start-btn');
@@ -345,7 +352,7 @@ socket.on('player_joined', (data) => {
     } else if (isHost) {
         document.getElementById('player-count').innerText = playerCount;
         const li = document.createElement('li');
-        li.innerHTML = `<span>${data.avatar}</span> ${data.playerName}`;
+        li.innerHTML = `<span>${escapeHtml(data.avatar)}</span> ${escapeHtml(data.playerName)}`;
         document.getElementById('players-list').appendChild(li);
         updateStartButton(playerCount, 'start-btn');
     }
@@ -581,7 +588,7 @@ socket.on('round_winner', (data) => {
         data.scores.sort((a, b) => b.score - a.score).forEach((p, i) => {
             const div = document.createElement('div');
             div.className = 'leaderboard-item' + (i === 0 ? ' first' : '');
-            div.innerHTML = `<span>${p.avatar} ${p.name}</span><span class="score">${p.score}</span>`;
+            div.innerHTML = `<span>${escapeHtml(p.avatar)} ${escapeHtml(p.name)}</span><span class="score">${p.score}</span>`;
             scoresList.appendChild(div);
         });
     } else {
@@ -597,15 +604,15 @@ socket.on('round_winner', (data) => {
 socket.on('game_over', (data) => {
     playSound('winner');
     showScreen('gameover-screen');
-    document.getElementById('final-winner').innerText = `${data.winner.avatar} ${data.winner.name} - ${data.winner.score} pts`;
-    
+    document.getElementById('final-winner').textContent = `${data.winner.avatar} ${data.winner.name} - ${data.winner.score} pts`;
+
     const scoresList = document.getElementById('final-scores');
     scoresList.innerHTML = '';
     data.leaderboard.forEach((p, i) => {
         const div = document.createElement('div');
         div.className = 'leaderboard-item' + (i === 0 ? ' first' : '');
         const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
-        div.innerHTML = `<span>${medal} ${p.avatar} ${p.name}</span><span class="score">${p.score}</span>`;
+        div.innerHTML = `<span>${medal} ${escapeHtml(p.avatar)} ${escapeHtml(p.name)}</span><span class="score">${p.score}</span>`;
         scoresList.appendChild(div);
     });
     
