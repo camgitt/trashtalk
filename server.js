@@ -137,6 +137,24 @@ function reconnectPlayer(socket, sessionToken) {
     return { room, player, roomCode: entry.roomCode };
 }
 
+// ============ EMIT HELPERS ============
+// Emit to all players in a room (handles phonePartyMode vs TV mode)
+function emitToPlayers(room, event, dataOrFn) {
+    room.players.forEach(player => {
+        const data = typeof dataOrFn === 'function' ? dataOrFn(player) : dataOrFn;
+        io.to(player.id).emit(event, data);
+    });
+}
+
+// Emit to host (TV mode) or all players (phone party mode)
+function emitToRoom(room, roomCode, event, data) {
+    if (room.phonePartyMode) {
+        room.players.forEach(p => io.to(p.id).emit(event, data));
+    } else {
+        io.to(room.hostId).emit(event, data);
+    }
+}
+
 // ============ HELPER FUNCTIONS ============
 function generateRoomCode() {
     if (Math.random() > 0.5 && settings.roomCodeWords.length > 0) {
@@ -540,20 +558,12 @@ io.on('connection', (socket) => {
             const packIcons = room.selectedPacks.map(p => cardsData.packs[p]?.icon || '📦').join(' ');
 
             socket.emit('joined_success', { playerName, avatar: player.avatar, packs: packIcons, roomCode, sessionToken });
-            
+
+            const joinData = { playerName, avatar: player.avatar, playerCount: room.players.length };
             if (room.phonePartyMode) {
-                room.players.forEach(p => {
-                    io.to(p.id).emit('player_joined', { 
-                        playerName, avatar: player.avatar,
-                        playerCount: room.players.length,
-                        players: room.players.map(pl => ({ name: pl.name, avatar: pl.avatar }))
-                    });
-                });
-            } else {
-                io.to(room.hostId).emit('player_joined', { 
-                    playerName, avatar: player.avatar, playerCount: room.players.length 
-                });
+                joinData.players = room.players.map(pl => ({ name: pl.name, avatar: pl.avatar }));
             }
+            emitToRoom(room, roomCode, 'player_joined', joinData);
             
             console.log(`👤 ${playerName} joined ${roomCode} (${room.players.length} players)`);
         } else {
@@ -604,18 +614,10 @@ io.on('connection', (socket) => {
         
         const submittedCount = Object.keys(room.submissions).length;
         const totalPlayers = room.players.length - 1;
-        
-        if (room.phonePartyMode) {
-            room.players.forEach(p => {
-                io.to(p.id).emit('player_submitted', { 
-                    playerName: player.name, playerAvatar: player.avatar, submittedCount, totalPlayers 
-                });
-            });
-        } else {
-            io.to(room.hostId).emit('player_submitted', { 
-                playerName: player.name, playerAvatar: player.avatar, submittedCount, totalPlayers 
-            });
-        }
+
+        emitToRoom(room, socket.roomCode, 'player_submitted', {
+            playerName: player.name, playerAvatar: player.avatar, submittedCount, totalPlayers
+        });
         
         console.log(`📝 ${player.name} submitted ${playedCards.length} cards`);
         
@@ -664,13 +666,9 @@ io.on('connection', (socket) => {
             room.players = room.players.filter(p => p.id !== socket.id);
             delete room.submissions[socket.id];
 
-            if (room.phonePartyMode) {
-                room.players.forEach(p => {
-                    io.to(p.id).emit('player_left', { playerName: socket.playerName, playerCount: room.players.length });
-                });
-            } else {
-                io.to(room.hostId).emit('player_left', { playerName: socket.playerName, playerCount: room.players.length });
-            }
+            emitToRoom(room, socket.roomCode, 'player_left', {
+                playerName: socket.playerName, playerCount: room.players.length
+            });
 
             console.log(`👋 ${socket.playerName} left ${socket.roomCode}`);
         }
@@ -771,13 +769,9 @@ io.on('connection', (socket) => {
                 // No session token, remove immediately
                 room.players = room.players.filter(p => p.id !== socket.id);
 
-                if (room.phonePartyMode) {
-                    room.players.forEach(p => {
-                        io.to(p.id).emit('player_left', { playerName: socket.playerName, playerCount: room.players.length });
-                    });
-                } else {
-                    io.to(room.hostId).emit('player_left', { playerName: socket.playerName, playerCount: room.players.length });
-                }
+                emitToRoom(room, socket.roomCode, 'player_left', {
+                    playerName: socket.playerName, playerCount: room.players.length
+                });
             }
         }
     });
