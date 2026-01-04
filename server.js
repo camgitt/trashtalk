@@ -69,6 +69,33 @@ setInterval(() => {
     }
 }, 60000);
 
+// ============ GAME EXPIRATION ============
+const GAME_EXPIRATION_MS = 2 * 60 * 60 * 1000;  // 2 hours
+const GAME_CLEANUP_INTERVAL = 5 * 60 * 1000;    // Check every 5 minutes
+
+function updateGameActivity(roomCode) {
+    if (games[roomCode]) {
+        games[roomCode].lastActivity = Date.now();
+    }
+}
+
+// Cleanup expired games every 5 minutes
+setInterval(() => {
+    const now = Date.now();
+    for (const [roomCode, room] of Object.entries(games)) {
+        if (now - room.lastActivity > GAME_EXPIRATION_MS) {
+            // Notify all connected players
+            if (room.phonePartyMode) {
+                room.players.forEach(p => io.to(p.id).emit('game_ended', 'Game expired due to inactivity'));
+            } else {
+                io.to(roomCode).emit('game_ended', 'Game expired due to inactivity');
+            }
+            delete games[roomCode];
+            console.log(`🧹 Game ${roomCode} expired after 2 hours of inactivity`);
+        }
+    }
+}, GAME_CLEANUP_INTERVAL);
+
 // ============ SESSION MANAGEMENT ============
 const RECONNECT_TIMEOUT = 60000;  // 60 seconds to rejoin
 const disconnectedPlayers = new Map();  // sessionToken -> { roomCode, playerIndex, timeout }
@@ -475,7 +502,8 @@ io.on('connection', (socket) => {
             submissions: {},
             shuffledSubmissions: [],
             phonePartyMode,
-            selectedPacks
+            selectedPacks,
+            lastActivity: Date.now()
         };
         
         socket.join(roomCode);
@@ -558,6 +586,7 @@ io.on('connection', (socket) => {
             const packIcons = room.selectedPacks.map(p => cardsData.packs[p]?.icon || '📦').join(' ');
 
             socket.emit('joined_success', { playerName, avatar: player.avatar, packs: packIcons, roomCode, sessionToken });
+            updateGameActivity(roomCode);
 
             const joinData = { playerName, avatar: player.avatar, playerCount: room.players.length };
             if (room.phonePartyMode) {
@@ -578,11 +607,13 @@ io.on('connection', (socket) => {
                 socket.emit('error_msg', `Need at least ${settings.minPlayers} players!`);
                 return;
             }
-            
+
+            updateGameActivity(socket.roomCode);
+
             if (room.phonePartyMode) {
                 room.players.forEach(p => io.to(p.id).emit('game_starting'));
             }
-            
+
             startRound(socket.roomCode);
         }
     }));
@@ -611,6 +642,7 @@ io.on('connection', (socket) => {
         
         room.submissions[socket.id] = playedCards;
         socket.emit('card_submitted');
+        updateGameActivity(socket.roomCode);
         
         const submittedCount = Object.keys(room.submissions).length;
         const totalPlayers = room.players.length - 1;
@@ -626,7 +658,10 @@ io.on('connection', (socket) => {
         }
     }));
 
-    socket.on('reveal_next', rateLimitedHandler(() => revealNextCard(socket.roomCode, socket.id)));
+    socket.on('reveal_next', rateLimitedHandler(() => {
+        updateGameActivity(socket.roomCode);
+        revealNextCard(socket.roomCode, socket.id);
+    }));
 
     socket.on('pick_winner', rateLimitedHandler((cardIndex) => {
         const room = games[socket.roomCode];
@@ -635,6 +670,7 @@ io.on('connection', (socket) => {
         const judge = room.players[room.judgeIndex];
         if (socket.id !== judge.id) return;
 
+        updateGameActivity(socket.roomCode);
         showWinner(socket.roomCode, cardIndex);
     }));
 
@@ -644,6 +680,8 @@ io.on('connection', (socket) => {
 
         const canTrigger = room.phonePartyMode ? socket.id === room.hostId : socket.isHost;
         if (!canTrigger) return;
+
+        updateGameActivity(socket.roomCode);
 
         if (room.currentRound >= roundsConfig.totalRounds) {
             endGame(socket.roomCode);
@@ -681,6 +719,7 @@ io.on('connection', (socket) => {
         const room = games[socket.roomCode];
         if (!room || socket.id !== room.hostId) return;
 
+        updateGameActivity(socket.roomCode);
         const decks = buildDecks(room.selectedPacks);
         room.state = 'lobby';
         room.currentRound = 0;
