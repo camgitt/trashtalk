@@ -28,6 +28,133 @@ app.get('/api/packs', (req, res) => {
 
 const games = {};
 
+// ============ INPUT VALIDATION ============
+function sanitizeName(name) {
+    if (typeof name !== 'string') return '';
+    return name
+        .trim()
+        .slice(0, 12)
+        .replace(/[<>]/g, '');  // Strip HTML brackets
+}
+
+function isValidRoomCode(code) {
+    return typeof code === 'string' && /^[A-Z0-9]{4,8}$/i.test(code);
+}
+
+// ============ RATE LIMITING ============
+const rateLimits = new Map();
+const RATE_LIMIT_WINDOW = 1000;  // 1 second
+const RATE_LIMIT_MAX = 10;       // max 10 events per second
+
+function isRateLimited(socketId) {
+    const now = Date.now();
+    const entry = rateLimits.get(socketId) || { count: 0, resetAt: now + RATE_LIMIT_WINDOW };
+
+    if (now > entry.resetAt) {
+        entry.count = 1;
+        entry.resetAt = now + RATE_LIMIT_WINDOW;
+    } else {
+        entry.count++;
+    }
+
+    rateLimits.set(socketId, entry);
+    return entry.count > RATE_LIMIT_MAX;
+}
+
+// Cleanup old rate limit entries every minute
+setInterval(() => {
+    const now = Date.now();
+    for (const [id, entry] of rateLimits) {
+        if (now > entry.resetAt + 60000) rateLimits.delete(id);
+    }
+}, 60000);
+
+// ============ SESSION MANAGEMENT ============
+const RECONNECT_TIMEOUT = 60000;  // 60 seconds to rejoin
+const disconnectedPlayers = new Map();  // sessionToken -> { roomCode, playerIndex, timeout }
+
+function generateSessionToken() {
+    return Math.random().toString(36).substring(2) + Date.now().toString(36);
+}
+
+function markPlayerDisconnected(roomCode, playerId, sessionToken) {
+    const room = games[roomCode];
+    if (!room) return;
+
+    const playerIndex = room.players.findIndex(p => p.id === playerId);
+    if (playerIndex === -1) return;
+
+    const player = room.players[playerIndex];
+    player.disconnected = true;
+    player.disconnectedAt = Date.now();
+
+    // Set timeout to remove player if they don't rejoin
+    const timeout = setTimeout(() => {
+        const room = games[roomCode];
+        if (room) {
+            room.players = room.players.filter(p => p.sessionToken !== sessionToken);
+            delete room.submissions[playerId];
+            console.log(`⏰ ${player.name} timed out from ${roomCode}`);
+        }
+        disconnectedPlayers.delete(sessionToken);
+    }, RECONNECT_TIMEOUT);
+
+    disconnectedPlayers.set(sessionToken, { roomCode, playerId, timeout });
+}
+
+function reconnectPlayer(socket, sessionToken) {
+    const entry = disconnectedPlayers.get(sessionToken);
+    if (!entry) return null;
+
+    const room = games[entry.roomCode];
+    if (!room) {
+        disconnectedPlayers.delete(sessionToken);
+        return null;
+    }
+
+    const player = room.players.find(p => p.sessionToken === sessionToken);
+    if (!player) {
+        disconnectedPlayers.delete(sessionToken);
+        return null;
+    }
+
+    // Clear the removal timeout
+    clearTimeout(entry.timeout);
+    disconnectedPlayers.delete(sessionToken);
+
+    // Update player's socket ID
+    const oldId = player.id;
+    player.id = socket.id;
+    player.disconnected = false;
+    delete player.disconnectedAt;
+
+    // Update submissions if player had submitted
+    if (room.submissions[oldId]) {
+        room.submissions[socket.id] = room.submissions[oldId];
+        delete room.submissions[oldId];
+    }
+
+    return { room, player, roomCode: entry.roomCode };
+}
+
+// ============ EMIT HELPERS ============
+// Emit to all players in a room (handles phonePartyMode vs TV mode)
+function emitToPlayers(room, event, dataOrFn) {
+    room.players.forEach(player => {
+        const data = typeof dataOrFn === 'function' ? dataOrFn(player) : dataOrFn;
+        io.to(player.id).emit(event, data);
+    });
+}
+
+// Emit to host (TV mode) or all players (phone party mode)
+function emitToRoom(room, roomCode, event, data) {
+    if (room.phonePartyMode) {
+        room.players.forEach(p => io.to(p.id).emit(event, data));
+    } else {
+        io.to(room.hostId).emit(event, data);
+    }
+}
+
 // ============ HELPER FUNCTIONS ============
 function generateRoomCode() {
     if (Math.random() > 0.5 && settings.roomCodeWords.length > 0) {
@@ -317,7 +444,16 @@ function endGame(roomCode) {
 io.on('connection', (socket) => {
     console.log('🎮 User connected:', socket.id);
 
-    socket.on('create_game', (options = {}) => {
+    // Rate limit wrapper for socket events
+    const rateLimitedHandler = (handler) => (...args) => {
+        if (isRateLimited(socket.id)) {
+            socket.emit('error_msg', 'Slow down! Too many requests.');
+            return;
+        }
+        handler(...args);
+    };
+
+    socket.on('create_game', rateLimitedHandler((options = {}) => {
         let roomCode = generateRoomCode();
         while (games[roomCode]) roomCode = generateRoomCode();
         
@@ -346,29 +482,51 @@ io.on('connection', (socket) => {
         socket.roomCode = roomCode;
         socket.isHost = true;
         
+        let sessionToken = null;
         if (phonePartyMode && options.hostName) {
-            const player = { id: socket.id, name: options.hostName, score: 0, avatar: getRandomEmoji(), hand: [] };
+            const hostName = sanitizeName(options.hostName);
+            if (!hostName) {
+                socket.emit('error_msg', 'Enter a valid name!');
+                delete games[roomCode];
+                return;
+            }
+            sessionToken = generateSessionToken();
+            const player = { id: socket.id, name: hostName, score: 0, avatar: getRandomEmoji(), hand: [], sessionToken };
             games[roomCode].players.push(player);
-            socket.playerName = options.hostName;
+            socket.playerName = hostName;
+            socket.sessionToken = sessionToken;
         }
-        
+
         // Get pack info for display
         const packIcons = selectedPacks.map(p => cardsData.packs[p]?.icon || '📦').join(' ');
-        
-        socket.emit('game_created', { 
-            roomCode, 
+
+        socket.emit('game_created', {
+            roomCode,
             phonePartyMode,
             hostName: options.hostName,
             hostAvatar: games[roomCode].players[0]?.avatar,
             packs: packIcons,
-            selectedPacks
+            selectedPacks,
+            sessionToken
         });
         
         console.log(`🏠 Game created: ${roomCode} | Packs: ${selectedPacks.join(', ')}`);
-    });
+    }));
 
-    socket.on('join_game', (data) => {
-        const { roomCode, playerName } = data;
+    socket.on('join_game', rateLimitedHandler((data) => {
+        const roomCode = (data.roomCode || '').toUpperCase().trim();
+        const playerName = sanitizeName(data.playerName);
+
+        if (!playerName) {
+            socket.emit('error_msg', 'Enter a valid name!');
+            return;
+        }
+
+        if (!isValidRoomCode(roomCode)) {
+            socket.emit('error_msg', 'Invalid room code!');
+            return;
+        }
+
         const room = games[roomCode];
 
         if (room) {
@@ -390,35 +548,30 @@ io.on('connection', (socket) => {
             socket.join(roomCode);
             socket.roomCode = roomCode;
             socket.playerName = playerName;
-            
-            const player = { id: socket.id, name: playerName, score: 0, avatar: getRandomEmoji(), hand: [] };
+
+            const sessionToken = generateSessionToken();
+            socket.sessionToken = sessionToken;
+
+            const player = { id: socket.id, name: playerName, score: 0, avatar: getRandomEmoji(), hand: [], sessionToken };
             room.players.push(player);
-            
+
             const packIcons = room.selectedPacks.map(p => cardsData.packs[p]?.icon || '📦').join(' ');
-            
-            socket.emit('joined_success', { playerName, avatar: player.avatar, packs: packIcons });
-            
+
+            socket.emit('joined_success', { playerName, avatar: player.avatar, packs: packIcons, roomCode, sessionToken });
+
+            const joinData = { playerName, avatar: player.avatar, playerCount: room.players.length };
             if (room.phonePartyMode) {
-                room.players.forEach(p => {
-                    io.to(p.id).emit('player_joined', { 
-                        playerName, avatar: player.avatar,
-                        playerCount: room.players.length,
-                        players: room.players.map(pl => ({ name: pl.name, avatar: pl.avatar }))
-                    });
-                });
-            } else {
-                io.to(room.hostId).emit('player_joined', { 
-                    playerName, avatar: player.avatar, playerCount: room.players.length 
-                });
+                joinData.players = room.players.map(pl => ({ name: pl.name, avatar: pl.avatar }));
             }
+            emitToRoom(room, roomCode, 'player_joined', joinData);
             
             console.log(`👤 ${playerName} joined ${roomCode} (${room.players.length} players)`);
         } else {
             socket.emit('error_msg', 'Room not found! Check the code.');
         }
-    });
+    }));
 
-    socket.on('start_game', () => {
+    socket.on('start_game', rateLimitedHandler(() => {
         const room = games[socket.roomCode];
         if (room && socket.isHost && room.state === 'lobby') {
             if (room.players.length < settings.minPlayers) {
@@ -432,9 +585,9 @@ io.on('connection', (socket) => {
             
             startRound(socket.roomCode);
         }
-    });
+    }));
 
-    socket.on('submit_cards', (cardIndices) => {
+    socket.on('submit_cards', rateLimitedHandler((cardIndices) => {
         const room = games[socket.roomCode];
         if (!room || room.state !== 'playing') return;
         
@@ -461,56 +614,73 @@ io.on('connection', (socket) => {
         
         const submittedCount = Object.keys(room.submissions).length;
         const totalPlayers = room.players.length - 1;
-        
-        if (room.phonePartyMode) {
-            room.players.forEach(p => {
-                io.to(p.id).emit('player_submitted', { 
-                    playerName: player.name, playerAvatar: player.avatar, submittedCount, totalPlayers 
-                });
-            });
-        } else {
-            io.to(room.hostId).emit('player_submitted', { 
-                playerName: player.name, playerAvatar: player.avatar, submittedCount, totalPlayers 
-            });
-        }
+
+        emitToRoom(room, socket.roomCode, 'player_submitted', {
+            playerName: player.name, playerAvatar: player.avatar, submittedCount, totalPlayers
+        });
         
         console.log(`📝 ${player.name} submitted ${playedCards.length} cards`);
         
         if (checkAllSubmitted(socket.roomCode)) {
             setTimeout(() => startReveal(socket.roomCode), settings.revealDelay);
         }
-    });
+    }));
 
-    socket.on('reveal_next', () => revealNextCard(socket.roomCode, socket.id));
+    socket.on('reveal_next', rateLimitedHandler(() => revealNextCard(socket.roomCode, socket.id)));
 
-    socket.on('pick_winner', (cardIndex) => {
+    socket.on('pick_winner', rateLimitedHandler((cardIndex) => {
         const room = games[socket.roomCode];
         if (!room || room.state !== 'reveal') return;
-        
+
         const judge = room.players[room.judgeIndex];
         if (socket.id !== judge.id) return;
-        
-        showWinner(socket.roomCode, cardIndex);
-    });
 
-    socket.on('next_round', () => {
+        showWinner(socket.roomCode, cardIndex);
+    }));
+
+    socket.on('next_round', rateLimitedHandler(() => {
         const room = games[socket.roomCode];
         if (!room) return;
-        
+
         const canTrigger = room.phonePartyMode ? socket.id === room.hostId : socket.isHost;
         if (!canTrigger) return;
-        
+
         if (room.currentRound >= roundsConfig.totalRounds) {
             endGame(socket.roomCode);
         } else {
             startRound(socket.roomCode);
         }
-    });
+    }));
 
-    socket.on('play_again', () => {
+    socket.on('leave_game', rateLimitedHandler(() => {
+        const room = games[socket.roomCode];
+        if (!room) return;
+
+        // Host leaving ends the game
+        if (socket.isHost) {
+            io.to(socket.roomCode).emit('game_ended', 'Host left the game');
+            delete games[socket.roomCode];
+            console.log(`💀 Game ${socket.roomCode} ended - host left`);
+        } else {
+            // Remove player from room
+            room.players = room.players.filter(p => p.id !== socket.id);
+            delete room.submissions[socket.id];
+
+            emitToRoom(room, socket.roomCode, 'player_left', {
+                playerName: socket.playerName, playerCount: room.players.length
+            });
+
+            console.log(`👋 ${socket.playerName} left ${socket.roomCode}`);
+        }
+
+        socket.leave(socket.roomCode);
+        socket.roomCode = null;
+    }));
+
+    socket.on('play_again', rateLimitedHandler(() => {
         const room = games[socket.roomCode];
         if (!room || socket.id !== room.hostId) return;
-        
+
         const decks = buildDecks(room.selectedPacks);
         room.state = 'lobby';
         room.currentRound = 0;
@@ -521,7 +691,7 @@ io.on('connection', (socket) => {
         room.submissions = {};
         room.shuffledSubmissions = [];
         room.players.forEach(p => { p.score = 0; p.hand = []; });
-        
+
         if (room.phonePartyMode) {
             room.players.forEach(p => {
                 io.to(p.id).emit('back_to_lobby', {
@@ -536,28 +706,72 @@ io.on('connection', (socket) => {
                 players: room.players.map(p => ({ name: p.name, avatar: p.avatar }))
             });
         }
-    });
+    }));
+
+    socket.on('rejoin_game', rateLimitedHandler((data) => {
+        const sessionToken = data.sessionToken;
+        if (!sessionToken) {
+            socket.emit('rejoin_failed', 'No session token');
+            return;
+        }
+
+        const result = reconnectPlayer(socket, sessionToken);
+        if (!result) {
+            socket.emit('rejoin_failed', 'Session expired or game ended');
+            return;
+        }
+
+        const { room, player, roomCode } = result;
+
+        socket.join(roomCode);
+        socket.roomCode = roomCode;
+        socket.playerName = player.name;
+        socket.sessionToken = sessionToken;
+        socket.isHost = room.hostId === socket.id;
+
+        // Send current game state to rejoined player
+        const packIcons = room.selectedPacks.map(p => cardsData.packs[p]?.icon || '📦').join(' ');
+        const isJudge = room.players[room.judgeIndex]?.id === socket.id;
+
+        socket.emit('rejoin_success', {
+            roomCode,
+            playerName: player.name,
+            avatar: player.avatar,
+            packs: packIcons,
+            gameState: room.state,
+            currentRound: room.currentRound,
+            maxRounds: roundsConfig.totalRounds,
+            prompt: room.currentPrompt,
+            hand: player.hand,
+            isJudge,
+            hasSubmitted: !!room.submissions[socket.id],
+            cardsNeeded: room.currentRoundConfig?.cardsNeeded || 1
+        });
+
+        console.log(`🔄 ${player.name} rejoined ${roomCode}`);
+    }));
 
     socket.on('disconnect', () => {
         console.log('👋 User disconnected:', socket.id);
-        
+
         if (socket.roomCode && games[socket.roomCode]) {
             const room = games[socket.roomCode];
-            
+
             if (socket.isHost) {
                 io.to(socket.roomCode).emit('game_ended', 'Host disconnected');
                 delete games[socket.roomCode];
                 console.log(`💀 Game ${socket.roomCode} ended - host left`);
+            } else if (socket.sessionToken) {
+                // Mark as disconnected, allow rejoin within timeout
+                markPlayerDisconnected(socket.roomCode, socket.id, socket.sessionToken);
+                console.log(`⏳ ${socket.playerName} disconnected, can rejoin within 60s`);
             } else {
+                // No session token, remove immediately
                 room.players = room.players.filter(p => p.id !== socket.id);
-                
-                if (room.phonePartyMode) {
-                    room.players.forEach(p => {
-                        io.to(p.id).emit('player_left', { playerName: socket.playerName, playerCount: room.players.length });
-                    });
-                } else {
-                    io.to(room.hostId).emit('player_left', { playerName: socket.playerName, playerCount: room.players.length });
-                }
+
+                emitToRoom(room, socket.roomCode, 'player_left', {
+                    playerName: socket.playerName, playerCount: room.players.length
+                });
             }
         }
     });

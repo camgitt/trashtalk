@@ -145,6 +145,60 @@
 .winner-name { font-size: 26px; margin: 12px 0; }
 .points-won { font-size: 20px; color: #2ed573; margin: 10px 0; }
 
+/* ============ LEAVE BUTTON ============ */
+.leave-btn {
+    margin-top: 30px;
+    padding: 8px 16px;
+    font-size: 12px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.5);
+}
+
+.leave-btn:hover {
+    background: rgba(255,71,87,0.2);
+    border-color: #ff4757;
+    color: #ff4757;
+}
+
+/* ============ QR CODE & SHARE ============ */
+.qr-share-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.qr-code {
+    width: 140px;
+    height: 140px;
+    border-radius: 10px;
+    background: white;
+    padding: 8px;
+}
+
+.share-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.share-btn:hover {
+    background: rgba(46,213,115,0.2);
+    border-color: #2ed573;
+}
+
+.share-btn.copied {
+    background: rgba(46,213,115,0.3);
+    border-color: #2ed573;
+}
+
 /* ============ VERSION BADGE ============ */
 .version-badge {
     position: fixed;
