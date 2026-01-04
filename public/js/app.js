@@ -417,7 +417,7 @@ socket.on('rejoin_failed', (reason) => {
 });
 
 socket.on('round_start', (data) => {
-    playSound('reveal');
+    playSound('roundStart');
     selectedCards = [];
     cardsNeeded = data.cardsNeeded || 1;
     isJudge = data.isJudge || false;
@@ -470,7 +470,7 @@ socket.on('round_start', (data) => {
 });
 
 socket.on('your_turn', (data) => {
-    playSound('reveal');
+    playSound('roundStart');
     selectedCards = [];
     cardsNeeded = data.cardsNeeded || 1;
     isJudge = data.isJudge;
