@@ -1,0 +1,23 @@
+{
+  "totalRounds": 10,
+  "phases": [
+    {
+      "rounds": [1, 2, 3],
+      "cardsNeeded": 1,
+      "points": 1,
+      "label": ""
+    },
+    {
+      "rounds": [4, 5, 6, 7],
+      "cardsNeeded": 2,
+      "points": 2,
+      "label": "🔥 DOUBLE COMBO!"
+    },
+    {
+      "rounds": [8, 9, 10],
+      "cardsNeeded": 3,
+      "points": 3,
+      "label": "💀 TRIPLE THREAT!"
+    }
+  ]
+}

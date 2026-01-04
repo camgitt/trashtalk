@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TRASH TALK</title>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/cards.css">
+    <link rel="stylesheet" href="/css/animations.css">
+</head>
+<body>
+
+    <button class="sound-toggle" onclick="toggleSound()" id="sound-btn">🔊</button>
+
+    <!-- START SCREEN -->
+    <div id="start-screen" class="screen scroll-screen">
+        <h1 class="logo">TRASH TALK</h1>
+        <p class="tagline">A party game for terrible people</p>
+        
+        <button onclick="showModeSelect()">🎮 Host Game</button>
+        <button onclick="showJoinScreen()" class="secondary">📱 Join Game</button>
+        
+        <div class="rules-box">
+            <h3>📖 How To Play</h3>
+            <ol>
+                <li>🎯 One player hosts, others join with the room code</li>
+                <li>👑 Each round, one player becomes the Judge</li>
+                <li>🃏 A prompt card appears with blanks to fill</li>
+                <li>✍️ Everyone (except Judge) picks their funniest cards</li>
+                <li>😂 Judge reveals answers and picks the winner</li>
+                <li>🔥 <strong>Rounds 4-7:</strong> Play 2 cards for 2 points!</li>
+                <li>💀 <strong>Rounds 8-10:</strong> Play 3 cards for 3 points!</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- MODE SELECT -->
+    <div id="mode-screen" class="screen hidden">
+        <h1 class="logo" style="font-size: 2.2rem;">HOST A GAME</h1>
+        <p style="color: #888; margin-bottom: 25px; font-size: 14px;">How are you playing?</p>
+        
+        <button class="mode-btn" onclick="showPhonePartySetup()">
+            <div class="mode-title">📱 Phone Party</div>
+            <div class="mode-desc">Everyone plays on their phones. No TV needed. You play too!</div>
+        </button>
+        
+        <button class="mode-btn secondary" onclick="showTVPackSelect()">
+            <div class="mode-title">🖥️ TV Mode</div>
+            <div class="mode-desc">Display game on a TV/laptop. Players join on phones.</div>
+        </button>
+        
+        <button onclick="showStartScreen()" class="secondary" style="margin-top: 20px; padding: 10px 20px; font-size: 13px;">← Back</button>
+    </div>
+
+    <!-- PHONE PARTY SETUP -->
+    <div id="phone-party-setup" class="screen scroll-screen hidden">
+        <h1 class="logo" style="font-size: 2.2rem;">PHONE PARTY</h1>
+        <p style="color: #888; margin-bottom: 10px; font-size: 14px;">Enter your name</p>
+        <input type="text" id="host-name" placeholder="Your Name" maxlength="12" autocomplete="off">
+        
+        <p style="color: #888; margin: 20px 0 10px; font-size: 14px;">Select card packs</p>
+        <div class="pack-selector"></div>
+        <p class="pack-count" style="color: #2ed573; font-size: 12px; margin-bottom: 15px;">6 packs selected</p>
+        
+        <button class="green" onclick="hostPhoneParty()">🚀 Create Game</button>
+        <button onclick="showModeSelect()" class="secondary" style="margin-top: 18px; padding: 10px 20px; font-size: 13px;">← Back</button>
+    </div>
+
+    <!-- TV MODE PACK SELECT -->
+    <div id="tv-pack-select" class="screen scroll-screen hidden">
+        <h1 class="logo" style="font-size: 2.2rem;">TV MODE</h1>
+        <p style="color: #888; margin-bottom: 10px; font-size: 14px;">Select card packs</p>
+        <div class="pack-selector"></div>
+        <p class="pack-count" style="color: #2ed573; font-size: 12px; margin-bottom: 15px;">6 packs selected</p>
+        
+        <button class="green" onclick="hostTVMode()">🚀 Create Game</button>
+        <button onclick="showModeSelect()" class="secondary" style="margin-top: 18px; padding: 10px 20px; font-size: 13px;">← Back</button>
+    </div>
+
+    <!-- HOST LOBBY (TV MODE) -->
+    <div id="host-screen" class="screen hidden">
+        <p style="color: #888; font-size: 13px;">Join at</p>
+        <p class="url-display" id="join-url"></p>
+        <div class="room-code" id="room-code-display">????</div>
+        <div class="pack-display" id="host-packs-display">🎓 🌶️ 👨‍👩‍👧 😂</div>
+        
+        <div class="players-container">
+            <h3>Players</h3>
+            <div class="player-count" id="player-count">0</div>
+            <ul id="players-list" class="player-list"></ul>
+        </div>
+        
+        <button id="start-btn" class="green" onclick="startGame()" disabled style="margin-top: 20px; padding: 16px 45px; font-size: 18px;">
+            🚀 Start Game
+        </button>
+        <p style="color:#888; font-size:11px; margin-top:6px;">Need at least 3 players</p>
+    </div>
+
+    <!-- PHONE PARTY LOBBY -->
+    <div id="phone-lobby-screen" class="screen hidden">
+        <p style="color: #888; font-size: 13px;">Share this code</p>
+        <p class="url-display" id="phone-join-url"></p>
+        <div class="room-code" id="phone-room-code">????</div>
+        <div class="pack-display" id="phone-packs-display">🎓 🌶️ 👨‍👩‍👧 😂</div>
+        
+        <div class="players-container">
+            <h3>Players</h3>
+            <ul id="phone-players-list" class="player-list"></ul>
+        </div>
+        
+        <button id="phone-start-btn" class="green" onclick="startGame()" disabled style="margin-top: 20px; padding: 16px 45px; font-size: 18px;">
+            🚀 Start Game
+        </button>
+        <p style="color:#888; font-size:11px; margin-top:6px;">Need at least 3 players</p>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game-screen" class="screen scroll-screen hidden">
+        <div class="round-info">Round <span id="game-round">1</span> of <span id="game-max-rounds">10</span> <span class="point-badge" id="point-badge">1 PT</span></div>
+        <div class="round-label hidden" id="round-label"></div>
+        <div class="judge-badge" id="game-judge-badge">👑 Judge: ???</div>
+        <div class="prompt-card" id="game-prompt">Loading...</div>
+        
+        <div id="game-hand-section">
+            <p class="selection-info" id="selection-info">Tap a card to play</p>
+            <div class="hand-container" id="game-hand"></div>
+            <button id="submit-combo-btn" class="green hidden" onclick="submitCombo()">✅ Submit Cards</button>
+        </div>
+        
+        <div id="game-judge-section" class="hidden">
+            <p style="color:#888; margin: 12px 0; font-size: 14px;">👑 You're the judge! Wait for answers<span class="pulse-dot"></span></p>
+        </div>
+        
+        <div id="game-waiting-section" class="hidden">
+            <div class="players-container" style="margin-top: 18px;">
+                <h3>Waiting for answers <span id="submit-progress"></span></h3>
+                <div class="progress-bar"><div class="progress-fill" id="submit-bar" style="width: 0%"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUBMITTED SCREEN -->
+    <div id="submitted-screen" class="screen hidden">
+        <div style="font-size: 50px; margin-bottom: 12px; animation: bounce 1s infinite;">✅</div>
+        <h2 style="font-size: 22px;">Cards Submitted!</h2>
+        <p style="color:#888; margin-top: 12px; font-size: 14px;">Waiting for others<span class="pulse-dot"></span></p>
+    </div>
+
+    <!-- REVEAL SCREEN -->
+    <div id="reveal-screen" class="screen scroll-screen hidden">
+        <div class="round-info">Round <span id="reveal-round">1</span> <span class="point-badge" id="reveal-point-badge">1 PT</span></div>
+        <div class="prompt-card" id="reveal-prompt" style="font-size: 0.9rem;">Loading...</div>
+        
+        <div class="revealed-cards-list" id="revealed-cards"></div>
+        
+        <div id="reveal-controls">
+            <button id="reveal-btn" class="green" onclick="revealNext()" style="margin-top: 12px; padding: 14px 30px;">
+                👆 Reveal Next
+            </button>
+            <p id="reveal-status" style="color:#888; margin-top:6px; font-size: 12px;"></p>
+        </div>
+        
+        <div id="judge-pick-section" class="hidden">
+            <p style="color:#ffd700; margin: 12px 0; font-size: 14px;">👑 Tap the winner!</p>
+        </div>
+        
+        <div id="watch-section" class="hidden">
+            <p style="color:#888; margin: 12px 0; font-size: 14px;">Waiting for judge<span class="pulse-dot"></span></p>
+        </div>
+    </div>
+
+    <!-- WINNER SCREEN -->
+    <div id="winner-screen" class="screen scroll-screen hidden">
+        <h2 style="color: #ffd700; font-size: 20px;">🏆 WINNER 🏆</h2>
+        <div class="winner-name" id="winner-display">🎉 Player</div>
+        <div class="points-won" id="points-won-display">+1 point</div>
+        <div class="prompt-card" id="winner-prompt" style="font-size: 0.85rem; padding: 16px;"></div>
+        <div class="winner-card" id="winner-card"></div>
+        
+        <div class="leaderboard" style="margin-top: 20px;" id="winner-scores-section">
+            <h3 style="color:#888; margin-bottom: 10px; font-size: 11px;">SCORES</h3>
+            <div id="winner-scores"></div>
+        </div>
+        
+        <button id="next-round-btn" class="green" onclick="nextRound()" style="margin-top: 20px;">
+            ➡️ Next Round
+        </button>
+    </div>
+
+    <!-- GAME OVER -->
+    <div id="gameover-screen" class="screen scroll-screen hidden">
+        <div style="font-size: 50px; margin-bottom: 12px;">🏆</div>
+        <h2 style="margin-bottom: 18px; font-size: 22px;">GAME OVER</h2>
+        <div class="winner-name" id="final-winner">Winner!</div>
+        
+        <div class="leaderboard" style="margin-top: 20px;">
+            <h3 style="color:#888; margin-bottom: 10px; font-size: 11px;">FINAL SCORES</h3>
+            <div id="final-scores"></div>
+        </div>
+        
+        <button id="play-again-btn" class="green" onclick="playAgain()" style="margin-top: 20px;">🔄 Play Again</button>
+    </div>
+
+    <!-- JOIN SCREEN -->
+    <div id="join-screen" class="screen hidden">
+        <h1 class="logo" style="font-size: 2.2rem;">TRASH TALK</h1>
+        <p style="color: #888; margin-bottom: 20px; font-size: 14px;">Join a game</p>
+        <input type="text" id="p-name" placeholder="Your Name" maxlength="12" autocomplete="off"><br>
+        <input type="text" id="p-code" placeholder="Room Code" maxlength="4" style="text-transform:uppercase" autocomplete="off"><br>
+        <button onclick="joinGame()">🎮 Join</button>
+        <p class="error-msg" id="error-msg"></p>
+        <button onclick="showStartScreen()" class="secondary" style="margin-top: 20px; padding: 10px 20px; font-size: 13px;">← Back</button>
+    </div>
+
+    <!-- PLAYER WAITING -->
+    <div id="waiting-screen" class="screen hidden">
+        <div class="waiting-emoji" id="my-avatar">🎉</div>
+        <div style="font-size: 24px; font-weight: bold;" id="my-name-display"></div>
+        <div class="pack-display" id="waiting-packs" style="margin-top: 15px;">🎓 🌶️</div>
+        <p style="color:#888; font-size:14px; margin-top:12px;">Waiting for host<span class="pulse-dot"></span></p>
+    </div>
+
+    <!-- GAME ENDED -->
+    <div id="ended-screen" class="screen hidden">
+        <div style="font-size: 45px; margin-bottom: 12px;">💀</div>
+        <h2 style="font-size: 20px;">Game Over</h2>
+        <p id="end-reason" style="color: #888; margin: 12px 0; font-size: 14px;"></p>
+        <button onclick="location.reload()">🔄 New Game</button>
+    </div>
+
+    <canvas id="confetti" class="confetti hidden"></canvas>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/sounds.js"></script>
+    <script src="/js/confetti.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>

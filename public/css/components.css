@@ -1,0 +1,146 @@
+/* ============ MODE BUTTONS ============ */
+.mode-btn {
+    width: 260px;
+    max-width: 85vw;
+    padding: 20px;
+    margin: 8px;
+    border-radius: 14px;
+    text-align: left;
+}
+
+.mode-btn .mode-title { font-size: 18px; margin-bottom: 6px; }
+.mode-btn .mode-desc { font-size: 12px; opacity: 0.8; font-weight: normal; }
+
+/* ============ PACK SELECTOR ============ */
+.pack-selector {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin: 15px 0;
+    max-width: 400px;
+}
+
+.pack-btn {
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 90px;
+}
+
+.pack-btn:hover { background: rgba(255,255,255,0.15); transform: none; box-shadow: none; }
+.pack-btn.selected { border-color: #2ed573; background: rgba(46,213,115,0.2); }
+
+.pack-btn .pack-icon { font-size: 24px; }
+.pack-btn .pack-name { font-size: 11px; font-weight: normal; }
+
+.pack-display {
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 20px;
+    letter-spacing: 4px;
+    margin: 10px 0;
+}
+
+/* ============ RULES BOX ============ */
+.rules-box {
+    background: rgba(255,255,255,0.05);
+    border-radius: 16px;
+    padding: 20px;
+    max-width: 320px;
+    width: 90%;
+    margin-top: 25px;
+    text-align: left;
+}
+
+.rules-box h3 { color: #ff4757; font-size: 14px; margin-bottom: 12px; text-align: center; }
+.rules-box ol { color: #ccc; font-size: 12px; line-height: 1.6; padding-left: 20px; }
+.rules-box li { margin-bottom: 8px; }
+
+/* ============ ROUND LABELS ============ */
+.round-label {
+    font-family: 'Bangers', cursive;
+    font-size: 24px;
+    margin-bottom: 10px;
+    animation: pulse 1s infinite;
+}
+
+.round-label.double { color: #ff9f43; text-shadow: 0 0 20px rgba(255,159,67,0.5); }
+.round-label.triple { color: #ee5a24; text-shadow: 0 0 20px rgba(238,90,36,0.5); }
+
+.point-badge {
+    background: linear-gradient(180deg, #ffd700 0%, #ffb700 100%);
+    color: #1a1a2e;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 12px;
+    margin-left: 8px;
+}
+
+/* ============ JUDGE BADGE ============ */
+.judge-badge {
+    background: linear-gradient(180deg, #ffd700 0%, #ffb700 100%);
+    color: #1a1a2e;
+    padding: 6px 16px;
+    border-radius: 16px;
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+/* ============ SELECTION INFO ============ */
+.selection-info { color: #888; font-size: 13px; margin: 10px 0; }
+.selection-info.ready { color: #2ed573; }
+
+/* ============ PROGRESS BAR ============ */
+.progress-bar {
+    width: 100%;
+    max-width: 300px;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    margin: 12px auto;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2ed573, #26de81);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+/* ============ LEADERBOARD ============ */
+.leaderboard {
+    background: rgba(255,255,255,0.05);
+    border-radius: 14px;
+    padding: 16px;
+    max-width: 320px;
+    width: 90%;
+}
+
+.leaderboard-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    font-size: 14px;
+}
+
+.leaderboard-item:last-child { border-bottom: none; }
+.leaderboard-item.first { background: rgba(255,215,0,0.2); border-radius: 8px; }
+.score { font-size: 20px; font-weight: bold; color: #2ed573; }
+
+/* ============ WINNER DISPLAY ============ */
+.winner-name { font-size: 26px; margin: 12px 0; }
+.points-won { font-size: 20px; color: #2ed573; margin: 10px 0; }
