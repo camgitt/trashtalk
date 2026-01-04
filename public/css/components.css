@@ -144,3 +144,14 @@
 /* ============ WINNER DISPLAY ============ */
 .winner-name { font-size: 26px; margin: 12px 0; }
 .points-won { font-size: 20px; color: #2ed573; margin: 10px 0; }
+
+/* ============ VERSION BADGE ============ */
+.version-badge {
+    position: fixed;
+    bottom: 8px;
+    right: 10px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    pointer-events: none;
+    z-index: 1000;
+}
